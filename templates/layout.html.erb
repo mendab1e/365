@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title><%= h(@page_title) %></title>
+    <meta name="description" content="<%= h(@description) %>">
+    <link rel="canonical" href="<%= h(@canonical_url) %>">
+    <meta property="og:title" content="<%= h(@page_title) %>">
+    <meta property="og:description" content="<%= h(@description) %>">
+    <meta property="og:type" content="<%= h(@page_type) %>">
+    <meta property="og:url" content="<%= h(@canonical_url) %>">
+    <meta property="og:site_name" content="<%= h(@config.project_title) %>">
+    <% if @social_photo %>
+      <meta property="og:image" content="<%= h(@social_image_url) %>">
+      <meta property="og:image:type" content="image/jpeg">
+      <meta property="og:image:width" content="<%= @social_photo.fetch(:width) %>">
+      <meta property="og:image:height" content="<%= @social_photo.fetch(:height) %>">
+      <meta property="og:image:alt" content="<%= h(@social_image_alt) %>">
+      <meta name="twitter:card" content="summary_large_image">
+      <meta name="twitter:title" content="<%= h(@page_title) %>">
+      <meta name="twitter:description" content="<%= h(@description) %>">
+      <meta name="twitter:image" content="<%= h(@social_image_url) %>">
+      <meta name="twitter:image:alt" content="<%= h(@social_image_alt) %>">
+    <% else %>
+      <meta name="twitter:card" content="summary">
+    <% end %>
+    <link rel="alternate" type="application/rss+xml" title="<%= h(@config.project_title) %> RSS" href="<%= public_path("feed.xml") %>">
+    <link rel="stylesheet" href="<%= public_path("assets/style.css") %>">
+    <script defer src="<%= public_path("assets/site.js") %>"></script>
+  </head>
+  <body>
+    <header class="site-header">
+      <nav class="primary-nav" aria-label="Primary navigation">
+        <a class="site-title" href="<%= public_path("index.html") %>"><%= h(@config.project_title) %></a>
+        <span class="nav-links">
+          <button class="calendar-toggle" type="button" aria-controls="year-calendar" aria-expanded="false">Calendar</button>
+          <a href="<%= public_path("about.html") %>">About</a>
+          <a href="<%= public_path("feed.xml") %>">RSS</a>
+        </span>
+      </nav>
+
+      <section class="year-calendar" id="year-calendar" aria-label="Twelve-month photo calendar" data-open="false">
+        <% calendar.months.each do |month| %>
+          <div class="calendar-month">
+            <h2>
+              <%= month.date.strftime("%B %Y") %><% month.later_years.each do |year| %><span class="calendar-year-later">/<%= year %></span><% end %>
+            </h2>
+            <div class="weekdays" aria-hidden="true">
+              <% %w[M T W T F S S].each do |weekday| %><span><%= weekday %></span><% end %>
+            </div>
+            <div class="month-grid">
+              <% month.weeks.flatten.each do |day| %>
+                <% if day.in_month && day.photo? %>
+                  <a class="calendar-day has-photo<%= " later-year-photo" if day.later_year? %>" href="<%= public_path("posts/#{day.photo_date.iso8601}.html") %>" aria-label="Photo for <%= day.photo_date.strftime("%B %-d, %Y") %>"><%= day.date.day %></a>
+                <% elsif day.in_month %>
+                  <span class="calendar-day"><%= day.date.day %></span>
+                <% else %>
+                  <span class="calendar-day outside" aria-hidden="true"></span>
+                <% end %>
+              <% end %>
+            </div>
+          </div>
+        <% end %>
+      </section>
+    </header>
+
+    <main><%= @content %></main>
+    <footer>One photograph, every day.</footer>
+  </body>
+</html>

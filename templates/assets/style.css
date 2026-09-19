@@ -1,0 +1,297 @@
+:root {
+  color-scheme: light;
+  --background: #ededeb;
+  --surface: #f7f7f5;
+  --ink: #181817;
+  --muted: #777772;
+  --line: #d3d3ce;
+  --later-year: #b8322b;
+  --max-width: 1240px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--background);
+  color: var(--ink);
+  font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: inherit;
+  text-decoration-color: #aaa;
+  text-underline-offset: 0.2em;
+}
+
+.site-header,
+main,
+footer {
+  margin-inline: auto;
+  max-width: var(--max-width);
+  padding-inline: 32px;
+}
+
+.site-header {
+  padding-top: 28px;
+}
+
+.primary-nav {
+  align-items: baseline;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 34px;
+}
+
+.primary-nav a {
+  text-decoration: none;
+}
+
+.site-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.nav-links {
+  align-items: baseline;
+  display: flex;
+  font-size: 0.9rem;
+  gap: 20px;
+}
+
+.calendar-toggle {
+  background: none;
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+  display: none;
+  font: inherit;
+  padding: 0;
+}
+
+.year-calendar {
+  border-bottom: 1px solid var(--line);
+  display: grid;
+  gap: 14px 20px;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  padding-bottom: 22px;
+}
+
+.calendar-month h2 {
+  font-size: 0.64rem;
+  letter-spacing: 0.02em;
+  margin: 0 0 5px;
+  text-transform: uppercase;
+}
+
+.calendar-year-later {
+  color: var(--later-year);
+}
+
+.weekdays,
+.month-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+}
+
+.weekdays {
+  color: var(--muted);
+  font-size: 0.5rem;
+  margin-bottom: 1px;
+  text-align: center;
+}
+
+.calendar-day {
+  align-items: center;
+  display: flex;
+  font-size: clamp(0.48rem, 0.65vw, 0.58rem);
+  height: 14px;
+  justify-content: center;
+  text-decoration: none;
+}
+
+.calendar-day.has-photo {
+  background: var(--ink);
+  border-radius: 50%;
+  color: white;
+  font-weight: 800;
+  justify-self: center;
+  width: 14px;
+}
+
+.calendar-day.has-photo:hover,
+.calendar-day.has-photo:focus-visible {
+  text-decoration: underline;
+}
+
+.calendar-day.later-year-photo {
+  background: var(--later-year);
+}
+
+.calendar-day.outside {
+  visibility: hidden;
+}
+
+.feed,
+.single-photo,
+.about-page,
+.empty-state {
+  margin: 76px auto 0;
+  max-width: 1000px;
+}
+
+.photo-post {
+  margin-bottom: 104px;
+}
+
+.photo-post h1,
+.about-page h1,
+.empty-state h1 {
+  font-size: clamp(1.3rem, 2.4vw, 2rem);
+  letter-spacing: -0.035em;
+  margin: 0 0 20px;
+}
+
+.photo-post h1 a {
+  text-decoration: none;
+}
+
+.photo-post picture,
+.photo-post img {
+  display: block;
+  height: auto;
+  max-width: 100%;
+}
+
+.photo-post img {
+  background: white;
+  border: 30px solid white;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 8%);
+  margin-inline: auto;
+  max-height: calc(100vh - 120px);
+  max-height: calc(100svh - 120px);
+  object-fit: contain;
+}
+
+.lazy-image {
+  opacity: 0;
+  transition: opacity 180ms ease-out;
+  width: auto;
+}
+
+.lazy-image.loaded {
+  opacity: 1;
+}
+
+.photo-link {
+  display: block;
+}
+
+.about-page {
+  max-width: 680px;
+  min-height: 35vh;
+}
+
+.about-page p,
+.empty-state p {
+  font-size: 1.08rem;
+  line-height: 1.65;
+}
+
+.back-link {
+  font-size: 0.9rem;
+  margin-top: 24px;
+}
+
+footer {
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 0.78rem;
+  margin-top: 90px;
+  padding-bottom: 34px;
+  padding-top: 24px;
+}
+
+@media (max-width: 900px) {
+  .year-calendar {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 700px) {
+  .site-header,
+  main,
+  footer {
+    padding-inline: 16px;
+  }
+
+  .site-header {
+    padding-top: 20px;
+  }
+
+  .primary-nav {
+    margin-bottom: 26px;
+  }
+
+  .calendar-toggle {
+    display: inline;
+  }
+
+  .year-calendar {
+    display: none;
+    gap: 18px 14px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    padding-bottom: 22px;
+  }
+
+  .year-calendar[data-open="true"] {
+    display: grid;
+  }
+
+  .calendar-month h2 {
+    font-size: 0.58rem;
+  }
+
+  .calendar-day {
+    font-size: 0.5rem;
+    height: 18px;
+  }
+
+  .calendar-day.has-photo {
+    width: 18px;
+  }
+
+  .feed,
+  .single-photo,
+  .about-page,
+  .empty-state {
+    margin-top: 48px;
+  }
+
+  .photo-post {
+    margin-bottom: 68px;
+  }
+
+  .photo-post h1 {
+    font-size: 1.25rem;
+    margin-bottom: 14px;
+  }
+
+  .photo-post img {
+    border-width: 15px;
+  }
+}
+
+@media (max-width: 390px) {
+  .year-calendar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

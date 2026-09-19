@@ -1,0 +1,26 @@
+<section class="feed" aria-label="Photo feed">
+  <% if photos.empty? %>
+    <div class="empty-state">
+      <h1>The first photo is coming soon.</h1>
+      <p>This daily photo project will begin here.</p>
+    </div>
+  <% else %>
+    <% photos.reverse_each do |photo| %>
+      <article class="photo-post" id="photo-<%= photo.fetch(:date) %>">
+        <h1><a href="<%= public_path("posts/#{photo.fetch(:date)}.html") %>"><%= long_date(photo) %></a></h1>
+        <a class="photo-link" href="<%= public_path("posts/#{photo.fetch(:date)}.html") %>" aria-label="Open photo for <%= long_date(photo) %>">
+          <picture>
+            <source media="(max-width: 700px)" data-srcset="<%= public_path(photo.fetch(:mobile_image)) %>">
+            <img class="lazy-image" data-src="<%= public_path(photo.fetch(:image)) %>" width="<%= photo.fetch(:width) %>" height="<%= photo.fetch(:height) %>" style="aspect-ratio: <%= photo.fetch(:width) %> / <%= photo.fetch(:height) %>" alt="Photo for <%= long_date(photo) %>" loading="lazy" decoding="async">
+          </picture>
+          <noscript>
+            <picture>
+              <source media="(max-width: 700px)" srcset="<%= public_path(photo.fetch(:mobile_image)) %>">
+              <img src="<%= public_path(photo.fetch(:image)) %>" width="<%= photo.fetch(:width) %>" height="<%= photo.fetch(:height) %>" alt="Photo for <%= long_date(photo) %>" loading="lazy" decoding="async">
+            </picture>
+          </noscript>
+        </a>
+      </article>
+    <% end %>
+  <% end %>
+</section>

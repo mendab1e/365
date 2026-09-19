@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+
+<% AI_CRAWLERS.each do |crawler| -%>
+User-agent: <%= crawler %>
+Disallow: /
+
+<% end -%>
+Sitemap: <%= absolute("sitemap.xml") %>

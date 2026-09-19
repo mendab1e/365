@@ -1,0 +1,8 @@
+<article class="photo-post single-photo">
+  <h1><%= long_date(@photo) %></h1>
+  <picture>
+    <source media="(max-width: 700px)" srcset="<%= public_path(@photo.fetch(:mobile_image)) %>">
+    <img src="<%= public_path(@photo.fetch(:image)) %>" width="<%= @photo.fetch(:width) %>" height="<%= @photo.fetch(:height) %>" alt="Photo for <%= long_date(@photo) %>" decoding="async">
+  </picture>
+  <p class="back-link"><a href="<%= public_path("index.html") %>">← Back to all photos</a></p>
+</article>

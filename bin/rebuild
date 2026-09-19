@@ -1,0 +1,12 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+$LOAD_PATH.unshift(File.expand_path("../lib", __dir__))
+
+require "year_in_photos"
+
+config = YearInPhotos::Config.from_env(require_telegram: false)
+store = YearInPhotos::PhotoStore.new(config.data_dir)
+YearInPhotos::SiteGenerator.new(config:, store:).generate!
+
+puts "Generated #{config.site_dir}"

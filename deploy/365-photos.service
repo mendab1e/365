@@ -1,0 +1,15 @@
+[Unit]
+Description=365 Days Telegram photo bot
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/365-photos
+EnvironmentFile=/opt/365-photos/.env
+ExecStart=/bin/bash -lc 'rbenv exec bundle exec bin/365_bot'
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
