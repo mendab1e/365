@@ -8,6 +8,8 @@ module YearInPhotos
     :telegram_token,
     :telegram_chat_id,
     :telegram_user_id,
+    :notification_chat_id,
+    :telegram_channel_url,
     :project_title,
     :timezone,
     :reminder_hour,
@@ -33,22 +35,27 @@ module YearInPhotos
         telegram_token: token,
         telegram_chat_id: chat_id&.to_s,
         telegram_user_id: ENV.fetch("TELEGRAM_USER_ID", nil)&.to_s,
+        notification_chat_id: optional(ENV.fetch("TELEGRAM_NOTIFICATION_CHAT_ID", nil)),
+        telegram_channel_url: channel_url,
         project_title: ENV.fetch("PROJECT_TITLE", "365 Days"),
         timezone:,
         reminder_hour: Integer(ENV.fetch("REMINDER_HOUR", "21"), 10),
         site_url: normalize_url(ENV.fetch("SITE_URL", "https://example.com")),
         site_dir: expand(root, ENV.fetch("SITE_DIR", "public")),
         data_dir: expand(root, ENV.fetch("DATA_DIR", "data")),
-        mobile_image_size: ENV.fetch("MOBILE_IMAGE_SIZE", "1290x2796")
+        mobile_image_size: ENV.fetch("MOBILE_IMAGE_SIZE", "900x1800")
       }
     end
 
     def validate!
       raise ArgumentError, "REMINDER_HOUR must be from 0 to 23" unless (0..23).cover?(reminder_hour)
       raise ArgumentError, "SITE_URL must be an absolute HTTP(S) URL" unless absolute_http_url?
+      if telegram_channel_url && !absolute_http_url?(telegram_channel_url)
+        raise ArgumentError, "TELEGRAM_CHANNEL_URL must be an absolute HTTP(S) URL"
+      end
       return if mobile_image_size.match?(/\A\d+x\d+\z/)
 
-      raise ArgumentError, "MOBILE_IMAGE_SIZE must look like 1290x2796"
+      raise ArgumentError, "MOBILE_IMAGE_SIZE must look like 900x1800"
     end
 
     def base_path
@@ -84,11 +91,26 @@ module YearInPhotos
 
     private
 
-    def absolute_http_url?
-      uri = URI(site_url)
+    def absolute_http_url?(url = site_url)
+      uri = URI(url)
       %w[http https].include?(uri.scheme) && uri.host
     rescue URI::InvalidURIError
       false
+    end
+
+    class << self
+      def channel_url
+        explicit = optional(ENV.fetch("TELEGRAM_CHANNEL_URL", nil))
+        return normalize_url(explicit) if explicit
+
+        chat_id = optional(ENV.fetch("TELEGRAM_NOTIFICATION_CHAT_ID", nil))
+        "https://t.me/#{chat_id.delete_prefix('@')}" if chat_id&.start_with?("@")
+      end
+
+      def optional(value)
+        stripped = value.to_s.strip
+        stripped unless stripped.empty?
+      end
     end
   end
 end

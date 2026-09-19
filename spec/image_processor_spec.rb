@@ -32,7 +32,7 @@ RSpec.describe YearInPhotos::ImageProcessor do
       conversions = commands.reject { |command| command[1] == "identify" }
 
       expect(conversions.map { |command| command[command.index("-resize") + 1] })
-        .to eq(%w[2000x2000> 1290x2796>])
+        .to eq(%w[2000x2000> 900x1800>])
       expect(conversions).to all(include("-auto-orient", "-strip", "-quality", "80"))
       expect(result).to include(width: 1500, height: 2000)
     end

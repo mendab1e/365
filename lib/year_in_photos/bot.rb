@@ -10,6 +10,9 @@ module YearInPhotos
 
     POLL_RETRY_SECONDS = 5
     REMINDER_CHECK_SECONDS = 30
+    NOTIFICATION_HOUR = 22
+    LATE_NOTIFICATION_HOUR = 23
+    LATE_NOTIFICATION_MINUTE = 59
 
     def initialize(config:, store:, services:, clock: Time, logger: nil)
       @config = config
@@ -50,6 +53,20 @@ module YearInPhotos
       @store.mark_reminded(date)
     end
 
+    def check_notification(now = @clock.now)
+      return unless @config.notification_chat_id
+
+      date = now.to_date
+      return if @store.notification_published?(date)
+      return if minutes_since_midnight(now) < NOTIFICATION_HOUR * 60
+
+      if late_notification_time?(now)
+        publish_notification_if_ready(date)
+      else
+        schedule_notification(date)
+      end
+    end
+
     private
 
     def dispatch_message(message)
@@ -83,7 +100,9 @@ module YearInPhotos
 
     def reminder_loop
       loop do
-        check_reminder
+        now = @clock.now
+        check_reminder(now)
+        check_notification(now)
         sleep(REMINDER_CHECK_SECONDS)
       rescue StandardError => e
         @logger.error("Reminder failed: #{e.class}: #{e.message}")
@@ -128,6 +147,31 @@ module YearInPhotos
 
     def reply(text)
       @telegram.send_message(@config.telegram_chat_id, text)
+    end
+
+    def publish_notification(date)
+      url = @config.absolute_url("posts/#{date.iso8601}.html")
+      @telegram.send_message(@config.notification_chat_id, url)
+      @store.mark_notification_published(date)
+    end
+
+    def publish_notification_if_ready(date)
+      publish_notification(date) if @store.photo_on(date)
+    end
+
+    def schedule_notification(date)
+      return if @store.notification_deferred?(date)
+      return publish_notification(date) if @store.photo_on(date)
+
+      @store.defer_notification(date)
+    end
+
+    def late_notification_time?(time)
+      minutes_since_midnight(time) >= (LATE_NOTIFICATION_HOUR * 60) + LATE_NOTIFICATION_MINUTE
+    end
+
+    def minutes_since_midnight(time)
+      (time.hour * 60) + time.min
     end
   end
 end

@@ -44,6 +44,22 @@ module YearInPhotos
       write_json(reminders_path, dates.sort)
     end
 
+    def notification_deferred?(date)
+      notification_dates("deferred").include?(date.iso8601)
+    end
+
+    def defer_notification(date)
+      update_notification_dates("deferred", date)
+    end
+
+    def notification_published?(date)
+      notification_dates("published").include?(date.iso8601)
+    end
+
+    def mark_notification_published(date)
+      update_notification_dates("published", date)
+    end
+
     private
 
     def photos_path
@@ -52,6 +68,20 @@ module YearInPhotos
 
     def reminders_path
       data_dir.join("reminders.json")
+    end
+
+    def notifications_path
+      data_dir.join("notifications.json")
+    end
+
+    def notification_dates(key)
+      read_json(notifications_path, {}).fetch(key, [])
+    end
+
+    def update_notification_dates(key, date)
+      state = read_json(notifications_path, {})
+      state[key] = (state.fetch(key, []) | [date.iso8601]).sort
+      write_json(notifications_path, state)
     end
 
     def read_json(path, fallback)

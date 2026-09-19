@@ -2,7 +2,8 @@
 
 A Telegram bot and static-site generator for a daily photo project. Sending the bot an image
 publishes it as today's photo. At 21:00 in the configured timezone, the bot sends one reminder
-if the day's image is missing.
+if the day's image is missing. An optional notification channel receives the dated page URL at
+22:00 when the photo is ready; if it is still missing then, a later photo is announced at 23:59.
 
 The public site is only generated HTML, CSS, images, and RSS. It does not need an application
 server. Each upload rebuilds every dated page, so the twelve-month calendar on old posts always
@@ -32,6 +33,11 @@ The bot only accepts messages from `TELEGRAM_CHAT_ID`. Set `TELEGRAM_USER_ID` as
 sender check, especially if the bot is used in a group. Send an image as either a Telegram image
 or an image document. Sending a second image on the same day replaces that day's photo.
 
+Set `TELEGRAM_NOTIFICATION_CHAT_ID` to a channel ID or public `@channelname` to enable daily URL
+announcements. Add the bot to that channel as an administrator with permission to post messages.
+For public usernames, the website's `Telegram` menu link is derived automatically. Set
+`TELEGRAM_CHANNEL_URL` explicitly when the destination uses a numeric ID or an invite link.
+
 Available commands:
 
 - `/status` — report whether today's image exists and the total photo count
@@ -43,7 +49,7 @@ Processed source-of-truth images and JSON metadata are stored under `data/`. The
 is written to `public/`; both are ignored by Git. Back up `data/`.
 
 ImageMagick auto-orients and strips metadata from incoming images. The desktop variant fits inside
-2000×2000 and the mobile variant fits inside 1290×2796. Both retain aspect ratio and use quality
+2000×2000 and the mobile variant fits inside 900×1800. Both retain aspect ratio and use quality
 80. For example, a 3000×4000 image becomes 1500×2000. The downloaded original is a temporary file
 and is deleted immediately after processing.
 

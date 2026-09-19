@@ -5,7 +5,8 @@
 This repository is a Ruby Telegram bot plus a static-site generator for a daily photo project.
 One authorized user sends a photo to the bot each day. The bot processes the image, records the
 day, and rebuilds a static website. At the configured reminder hour, it sends one Telegram reminder
-if that day's photo is missing.
+if that day's photo is missing. An optional notification channel receives the dated page URL at
+22:00 if the photo is present, or at 23:59 when the photo was missing at 22:00.
 
 The deployed website must remain static: HTML, CSS, JavaScript, images, and RSS only. Do not add a
 web application server, database, client-side framework, or build pipeline unless the user changes
@@ -34,8 +35,8 @@ that requirement. A temporary loopback-only static server is acceptable for loca
 The entry point is `bin/365_bot`. It constructs shared services and starts two long-lived loops:
 
 1. Telegram long polling receives messages and dispatches commands or image uploads.
-2. A reminder thread checks every 30 seconds whether the configured hour has passed and today's
-   photo is still missing.
+2. A scheduling thread checks every 30 seconds for the missing-photo reminder and the optional
+   22:00/23:59 notification-channel publication.
 
 The upload pipeline is:
 
@@ -61,7 +62,8 @@ conversion does not remove the currently working images.
 - `lib/year_in_photos/bot.rb` — authorization, commands, upload orchestration, retry loops, and
   reminder scheduling.
 - `lib/year_in_photos/image_processor.rb` — shells out safely to ImageMagick without a shell string.
-- `lib/year_in_photos/photo_store.rb` — JSON metadata and reminder persistence with atomic renames.
+- `lib/year_in_photos/photo_store.rb` — JSON metadata, reminder state, and channel-notification
+  state with atomic renames.
 - `lib/year_in_photos/calendar.rb` — creates twelve consecutive month grids beginning with the
   month of the first upload.
 - `lib/year_in_photos/site_generator.rb` — renders ERB templates, copies processed images/assets,
@@ -75,6 +77,7 @@ conversion does not remove the currently working images.
 
 - `data/photos.json` — sorted photo records with date, image paths, and desktop dimensions.
 - `data/reminders.json` — dates for which a reminder was already sent.
+- `data/notifications.json` — dates whose channel publication was deferred or completed.
 - `data/images/YYYY-MM-DD.jpg` — desktop image.
 - `data/images/YYYY-MM-DD-mobile.jpg` — mobile image.
 
@@ -98,7 +101,7 @@ at the start because the same instance is reused by the long-running bot.
 - Auto-orient and strip metadata.
 - Preserve aspect ratio and never upscale (`-resize SIZE>`).
 - Desktop bounds: 2000×2000.
-- Mobile bounds: `MOBILE_IMAGE_SIZE`, default 1290×2796.
+- Mobile bounds: `MOBILE_IMAGE_SIZE`, default 900×1800.
 - JPEG quality: 80, progressive interlacing enabled.
 - Use only the first frame/page of a submitted image.
 - The desktop width and height are stored for stable browser layout.
@@ -137,6 +140,10 @@ at the start because the same instance is reused by the long-running bot.
 
 - `TELEGRAM_CHAT_ID` is required and is always checked.
 - `TELEGRAM_USER_ID` is optional but recommended as an additional sender restriction.
+- `TELEGRAM_NOTIFICATION_CHAT_ID` optionally receives a dated post URL. If the photo exists at
+  22:00, the URL is sent then. If it is absent, that date is marked deferred and a later photo is
+  announced at 23:59. No link is sent if the dated page still does not exist at 23:59.
+- Channel publication state is persisted, so restarts do not duplicate announcements.
 - Accepted uploads are Telegram photos and image documents.
 - `/status` reports today's state and total photo count.
 - `/rebuild` regenerates the site.
@@ -148,6 +155,8 @@ at the start because the same instance is reused by the long-running bot.
 See `.env.example`. Important values are:
 
 - `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, optional `TELEGRAM_USER_ID`
+- optional `TELEGRAM_NOTIFICATION_CHAT_ID` and `TELEGRAM_CHANNEL_URL`; a public `@channelname`
+  automatically derives its `https://t.me/` menu link
 - `PROJECT_TITLE`, `PROJECT_TIMEZONE`, `REMINDER_HOUR`
 - `SITE_URL`, `SITE_DIR`, `DATA_DIR`, `MOBILE_IMAGE_SIZE`
 
@@ -159,11 +168,11 @@ sample systemd unit uses `EnvironmentFile`.
 Specs mirror component boundaries:
 
 - `calendar_spec.rb` — rolling month range and uploaded-date state.
-- `photo_store_spec.rb` — same-date replacement and reminder persistence.
+- `photo_store_spec.rb` — same-date replacement, reminder persistence, and notification state.
 - `image_processor_spec.rb` — ImageMagick arguments, bounds, and quality.
 - `site_generator_spec.rb` — pages, RSS, current calendars on old pages, responsive assets, mobile
   toggle markup, and deferred image loading.
-- `bot_spec.rb` — reminder timing, suppression, and deduplication.
+- `bot_spec.rb` — reminder timing plus 22:00/23:59 channel scheduling and deduplication.
 
 When changing generated markup, update the template and generator spec, then run `bin/rebuild` to
 refresh the local preview. Never edit `public/` directly because the next rebuild overwrites it.

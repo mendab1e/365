@@ -33,4 +33,17 @@ RSpec.describe YearInPhotos::PhotoStore do
         .to change { store.reminded?(date) }.from(false).to(true)
     end
   end
+
+  describe "notification scheduling" do
+    let(:date) { Date.new(2026, 9, 19) }
+
+    it "persists deferred and published state" do
+      store.defer_notification(date)
+      store.mark_notification_published(date)
+
+      reloaded_store = described_class.new(Pathname.new(directory))
+      expect(reloaded_store.notification_deferred?(date)).to be(true)
+      expect(reloaded_store.notification_published?(date)).to be(true)
+    end
+  end
 end

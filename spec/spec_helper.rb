@@ -18,13 +18,15 @@ def build_config(root:, **overrides)
     telegram_token: "token",
     telegram_chat_id: "42",
     telegram_user_id: nil,
+    notification_chat_id: nil,
+    telegram_channel_url: nil,
     project_title: "365 Days",
     timezone: "Europe/Berlin",
     reminder_hour: 21,
     site_url: "https://photos.example.test",
     site_dir: root.join("public"),
     data_dir: root.join("data"),
-    mobile_image_size: "1290x2796"
+    mobile_image_size: "900x1800"
   }
   YearInPhotos::Config.new(**defaults, **overrides)
 end

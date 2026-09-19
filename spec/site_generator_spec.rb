@@ -67,6 +67,24 @@ RSpec.describe YearInPhotos::SiteGenerator do
       expect(index).to include('aria-controls="year-calendar"')
     end
 
+    it "includes a configured Telegram channel after the RSS link" do
+      linked_config = build_config(
+        root:,
+        telegram_channel_url: "https://t.me/photo_channel"
+      )
+      described_class.new(config: linked_config, store:, now: -> { now }).generate!
+      index = linked_config.site_dir.join("index.html").read
+
+      expect(index.index("feed.xml")).to be < index.index("https://t.me/photo_channel")
+      expect(index).to include('href="https://t.me/photo_channel">Telegram</a>')
+    end
+
+    it "omits the Telegram menu item when no channel is configured" do
+      index = config.site_dir.join("index.html").read
+
+      expect(index).not_to include(">Telegram</a>")
+    end
+
     it "folds next year's matching month into a red calendar layer" do
       save_photo("2027-09-17")
       generator.generate!
