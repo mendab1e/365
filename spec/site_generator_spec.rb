@@ -49,13 +49,36 @@ RSpec.describe YearInPhotos::SiteGenerator do
       expect(index).to include("images/2026-09-19-mobile.jpg")
     end
 
+    it "marks portrait photos for aspect-ratio-preserving viewport sizing" do
+      save_photo("2026-09-20", width: 1333, height: 2000)
+      generator.generate!
+      post = config.site_dir.join("posts/2026-09-20.html").read
+
+      expect(post).to include('class="portrait-photo"')
+    end
+
     it "defers feed images until the browser approaches them" do
       index = config.site_dir.join("index.html").read
 
-      expect(index).to include('class="lazy-image"')
+      expect(index).to include('class="lazy-image')
       expect(index).to include('data-src="/images/2026-09-19.jpg"')
       expect(index).to include('style="aspect-ratio: 1500 / 2000"')
       expect(config.site_dir.join("assets/site.js")).to exist
+    end
+
+    it "opens photos at full resolution while keeping date titles linked to posts" do
+      index = config.site_dir.join("index.html").read
+      post = config.site_dir.join("posts/2026-09-19.html").read
+
+      expect(index).to include('<h1><a href="/posts/2026-09-19.html">')
+      expect(index).to include(
+        'class="photo-link lightbox-trigger" href="/images/2026-09-19.jpg"'
+      )
+      expect(post).to include(
+        'class="photo-link lightbox-trigger" href="/images/2026-09-19.jpg"'
+      )
+      expect(index).to include('class="lightbox"')
+      expect(index).to include('class="lightbox-image"')
     end
 
     it "includes an accessible mobile calendar toggle before the About link" do
@@ -150,15 +173,15 @@ RSpec.describe YearInPhotos::SiteGenerator do
     end
   end
 
-  def save_photo(date)
+  def save_photo(date, width: 1500, height: 2000)
     store.images_dir.join("#{date}.jpg").write("desktop")
     store.images_dir.join("#{date}-mobile.jpg").write("mobile")
     store.save_photo(
       date:,
       image: "images/#{date}.jpg",
       mobile_image: "images/#{date}-mobile.jpg",
-      width: 1500,
-      height: 2000
+      width:,
+      height:
     )
   end
 end

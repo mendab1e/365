@@ -29,20 +29,39 @@
 
   if (!("IntersectionObserver" in window)) {
     images.forEach(loadImage);
-    return;
+  } else {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+
+          loadImage(entry.target);
+          observer.unobserve(entry.target);
+        });
+      },
+      { rootMargin: "300px 0px" }
+    );
+
+    images.forEach((image) => observer.observe(image));
   }
 
-  const observer = new IntersectionObserver(
-    (entries) => {
-      entries.forEach((entry) => {
-        if (!entry.isIntersecting) return;
+  const lightbox = document.querySelector(".lightbox");
+  const lightboxImage = lightbox?.querySelector(".lightbox-image");
+  const closeButton = lightbox?.querySelector(".lightbox-close");
 
-        loadImage(entry.target);
-        observer.unobserve(entry.target);
-      });
-    },
-    { rootMargin: "300px 0px" }
-  );
+  if (!lightbox || !lightboxImage || !("showModal" in lightbox)) return;
 
-  images.forEach((image) => observer.observe(image));
+  document.querySelectorAll(".lightbox-trigger").forEach((trigger) => {
+    trigger.addEventListener("click", (event) => {
+      event.preventDefault();
+      lightboxImage.src = trigger.dataset.lightboxSrc;
+      lightboxImage.alt = trigger.dataset.lightboxAlt;
+      lightbox.showModal();
+    });
+  });
+
+  closeButton.addEventListener("click", () => lightbox.close());
+  lightbox.addEventListener("click", (event) => {
+    if (event.target === lightbox) lightbox.close();
+  });
 })();

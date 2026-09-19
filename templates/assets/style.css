@@ -179,12 +179,17 @@ footer {
   max-height: calc(100vh - 120px);
   max-height: calc(100svh - 120px);
   object-fit: contain;
+  width: auto;
+}
+
+.photo-post img.portrait-photo {
+  height: min(calc(100vh - 120px), 2000px);
+  height: min(calc(100svh - 120px), 2000px);
 }
 
 .lazy-image {
   opacity: 0;
   transition: opacity 180ms ease-out;
-  width: auto;
 }
 
 .lazy-image.loaded {
@@ -192,7 +197,59 @@ footer {
 }
 
 .photo-link {
+  cursor: zoom-in;
   display: block;
+}
+
+.lightbox {
+  background: transparent;
+  border: 0;
+  height: 100%;
+  margin: 0;
+  max-height: none;
+  max-width: none;
+  padding: 30px;
+  width: 100%;
+}
+
+.lightbox[open] {
+  display: grid;
+  place-items: center;
+}
+
+.lightbox::backdrop {
+  background: rgb(20 20 20 / 94%);
+}
+
+.lightbox-image {
+  background: white;
+  border: 30px solid white;
+  box-shadow: 0 4px 30px rgb(0 0 0 / 35%);
+  display: block;
+  height: auto;
+  max-height: calc(100vh - 60px);
+  max-height: calc(100dvh - 60px);
+  max-width: calc(100vw - 60px);
+  object-fit: contain;
+  width: auto;
+}
+
+.lightbox-close {
+  background: rgb(255 255 255 / 90%);
+  border: 0;
+  border-radius: 50%;
+  color: #111;
+  cursor: pointer;
+  font: inherit;
+  font-size: 1.3rem;
+  height: 36px;
+  line-height: 1;
+  padding: 0 0 2px;
+  position: fixed;
+  right: 14px;
+  top: 14px;
+  width: 36px;
+  z-index: 1;
 }
 
 .about-page {
@@ -287,6 +344,17 @@ footer {
 
   .photo-post img {
     border-width: 15px;
+  }
+
+  .lightbox {
+    padding: 15px;
+  }
+
+  .lightbox-image {
+    border-width: 15px;
+    max-height: calc(100vh - 30px);
+    max-height: calc(100dvh - 30px);
+    max-width: calc(100vw - 30px);
   }
 }
 

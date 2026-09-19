@@ -123,6 +123,9 @@ at the start because the same instance is reused by the long-running bot.
   placeholders prevent layout collapse and premature loading. Keep the `<noscript>` fallback.
 - Feed images are constrained by viewport height so a portrait photo fits within a desktop screen;
   width remains automatic to preserve aspect ratio.
+- Clicking a feed photo opens the largest processed image in a full-screen modal with the white
+  frame preserved. Clicking the feed date title opens that photo's permanent dated page. The
+  full-screen viewer closes from its close button, backdrop, or Escape key.
 - Photos receive a uniform white CSS frame and a subtle shadow at render time: 30px on desktop and
   15px on mobile. Do not bake the frame into processed files; RSS, sitemap, and social cards should
   use the clean JPEG.
