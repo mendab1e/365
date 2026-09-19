@@ -11,7 +11,7 @@
         <a class="photo-link lightbox-trigger" href="<%= public_path(photo.fetch(:image)) %>" data-lightbox-src="<%= public_path(photo.fetch(:image)) %>" data-lightbox-alt="Photo for <%= long_date(photo) %>" aria-label="View full-screen photo for <%= long_date(photo) %>">
           <picture>
             <source media="(max-width: 700px)" data-srcset="<%= public_path(photo.fetch(:mobile_image)) %>">
-            <img class="lazy-image<%= " portrait-photo" if photo.fetch(:height) > photo.fetch(:width) %>" data-src="<%= public_path(photo.fetch(:image)) %>" width="<%= photo.fetch(:width) %>" height="<%= photo.fetch(:height) %>" style="aspect-ratio: <%= photo.fetch(:width) %> / <%= photo.fetch(:height) %>" alt="Photo for <%= long_date(photo) %>" loading="lazy" decoding="async">
+            <img class="lazy-image<%= " portrait-photo" if photo.fetch(:height) > photo.fetch(:width) %>" data-src="<%= public_path(photo.fetch(:image)) %>" width="<%= photo.fetch(:width) %>" height="<%= photo.fetch(:height) %>" style="aspect-ratio: auto <%= photo.fetch(:width) %> / <%= photo.fetch(:height) %>" alt="Photo for <%= long_date(photo) %>" loading="lazy" decoding="async">
           </picture>
           <noscript>
             <picture>
@@ -24,3 +24,8 @@
     <% end %>
   <% end %>
 </section>
+<button class="back-to-top" type="button" aria-label="Back to top" title="Back to top" hidden>
+  <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+    <path d="M3 10.5 8 5.5l5 5"></path>
+  </svg>
+</button>

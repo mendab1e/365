@@ -119,13 +119,17 @@ at the start because the same instance is reused by the long-running bot.
   older posts remain in the feed and retain their permanent pages.
 - On screens at or below 700px, the calendar is hidden initially. A `Calendar` button before the
   About link toggles it and updates `aria-expanded`.
-- Feed images use `data-src`/`data-srcset` plus `IntersectionObserver`; explicit aspect-ratio
-  placeholders prevent layout collapse and premature loading. Keep the `<noscript>` fallback.
+- Feed images use `data-src`/`data-srcset` plus `IntersectionObserver`; intrinsic `width` and
+  `height` attributes plus an `auto` fallback aspect ratio prevent layout collapse while yielding
+  to the loaded image's natural ratio. Keep the `<noscript>` fallback.
 - Feed images are constrained by viewport height so a portrait photo fits within a desktop screen;
   width remains automatic to preserve aspect ratio.
 - Clicking a feed photo opens the largest processed image in a full-screen modal with the white
   frame preserved. Clicking the feed date title opens that photo's permanent dated page. The
   full-screen viewer closes from its close button, backdrop, or Escape key.
+- The index has a fixed circular `^` back-to-top button. It remains hidden until the page has
+  scrolled beyond the calendar (or the collapsed header on mobile), then scrolls smoothly to the
+  top while respecting reduced-motion preferences.
 - Photos receive a uniform white CSS frame and a subtle shadow at render time: 30px on desktop and
   15px on mobile. Do not bake the frame into processed files; RSS, sitemap, and social cards should
   use the clean JPEG.

@@ -62,7 +62,8 @@ RSpec.describe YearInPhotos::SiteGenerator do
 
       expect(index).to include('class="lazy-image')
       expect(index).to include('data-src="/images/2026-09-19.jpg"')
-      expect(index).to include('style="aspect-ratio: 1500 / 2000"')
+      expect(index).to include('width="1500" height="2000"')
+      expect(index).to include('style="aspect-ratio: auto 1500 / 2000"')
       expect(config.site_dir.join("assets/site.js")).to exist
     end
 
@@ -79,6 +80,17 @@ RSpec.describe YearInPhotos::SiteGenerator do
       )
       expect(index).to include('class="lightbox"')
       expect(index).to include('class="lightbox-image"')
+    end
+
+    it "adds an index-only back-to-top control" do
+      index = config.site_dir.join("index.html").read
+      about = config.site_dir.join("about.html").read
+      post = config.site_dir.join("posts/2026-09-19.html").read
+
+      expect(index).to include('class="back-to-top"')
+      expect(index).to include('aria-label="Back to top"')
+      expect(about).not_to include('class="back-to-top"')
+      expect(post).not_to include('class="back-to-top"')
     end
 
     it "includes an accessible mobile calendar toggle before the About link" do

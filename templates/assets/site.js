@@ -49,19 +49,36 @@
   const lightboxImage = lightbox?.querySelector(".lightbox-image");
   const closeButton = lightbox?.querySelector(".lightbox-close");
 
-  if (!lightbox || !lightboxImage || !("showModal" in lightbox)) return;
-
-  document.querySelectorAll(".lightbox-trigger").forEach((trigger) => {
-    trigger.addEventListener("click", (event) => {
-      event.preventDefault();
-      lightboxImage.src = trigger.dataset.lightboxSrc;
-      lightboxImage.alt = trigger.dataset.lightboxAlt;
-      lightbox.showModal();
+  if (lightbox && lightboxImage && "showModal" in lightbox) {
+    document.querySelectorAll(".lightbox-trigger").forEach((trigger) => {
+      trigger.addEventListener("click", (event) => {
+        event.preventDefault();
+        lightboxImage.src = trigger.dataset.lightboxSrc;
+        lightboxImage.alt = trigger.dataset.lightboxAlt;
+        lightbox.showModal();
+      });
     });
-  });
 
-  closeButton.addEventListener("click", () => lightbox.close());
-  lightbox.addEventListener("click", (event) => {
-    if (event.target === lightbox) lightbox.close();
-  });
+    closeButton.addEventListener("click", () => lightbox.close());
+    lightbox.addEventListener("click", (event) => {
+      if (event.target === lightbox) lightbox.close();
+    });
+  }
+
+  const backToTop = document.querySelector(".back-to-top");
+
+  if (backToTop && calendar) {
+    const updateBackToTop = () => {
+      const boundary = calendar.offsetParent ? calendar : document.querySelector(".site-header");
+      backToTop.hidden = boundary.getBoundingClientRect().bottom >= 0;
+    };
+
+    window.addEventListener("scroll", updateBackToTop, { passive: true });
+    window.addEventListener("resize", updateBackToTop);
+    backToTop.addEventListener("click", () => {
+      const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      window.scrollTo({ top: 0, behavior: reducedMotion ? "auto" : "smooth" });
+    });
+    updateBackToTop();
+  }
 })();
