@@ -92,8 +92,8 @@ conversion does not remove the currently working images.
 - `assets/` and `images/` — copied browser assets and processed photos.
 
 Every upload regenerates every dated page. This is intentional: old post pages then receive the
-latest calendar links without needing dynamic server rendering. Generator writes use temporary
-files followed by atomic renames. `SiteGenerator#generate!` clears its memoized photo/calendar data
+latest calendar links without needing dynamic server rendering. Generator writes go into a private staging directory, which SitePublisher installs only after
+all files are complete. Only images referenced by photo records are copied to the site. `SiteGenerator#generate!` clears its memoized photo/calendar data
 at the start because the same instance is reused by the long-running bot.
 
 ## Image contract

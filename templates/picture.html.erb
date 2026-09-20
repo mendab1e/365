@@ -1,0 +1,4 @@
+<picture>
+  <source media="(max-width: 700px)" <%= deferred ? "data-srcset" : "srcset" %>="<%= public_path(photo.fetch(:mobile_image)) %>">
+  <img class="<%= [deferred ? "lazy-image" : nil, photo.fetch(:height) > photo.fetch(:width) ? "portrait-photo" : nil].compact.join(" ") %>" <%= deferred ? "data-src" : "src" %>="<%= public_path(photo.fetch(:image)) %>" width="<%= photo.fetch(:width) %>" height="<%= photo.fetch(:height) %>"<% if deferred %> style="aspect-ratio: auto <%= photo.fetch(:width) %> / <%= photo.fetch(:height) %>"<% end %> alt="Photo for <%= long_date(photo) %>"<% if lazy %> loading="lazy"<% end %> decoding="async">
+</picture>

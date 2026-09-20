@@ -114,16 +114,12 @@ module YearInPhotos
     end
 
     def convert(source, destination, size)
-      temporary = destination.sub_ext(".tmp.jpg")
       args = [
         "magick", *RESOURCE_LIMITS, "jpeg:#{source}[0]", "-auto-orient", "-strip",
         "-resize", "#{size}>", "-quality", QUALITY,
-        "-interlace", "Plane", temporary.to_s
+        "-interlace", "Plane", destination.to_s
       ]
       run!(*args)
-      File.rename(temporary, destination)
-    ensure
-      FileUtils.rm_f(temporary) if temporary
     end
 
     def dimensions(path)

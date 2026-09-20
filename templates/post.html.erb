@@ -1,10 +1,5 @@
 <article class="photo-post single-photo">
   <h1><%= long_date(@photo) %></h1>
-  <a class="photo-link lightbox-trigger" href="<%= public_path(@photo.fetch(:image)) %>" data-lightbox-src="<%= public_path(@photo.fetch(:image)) %>" data-lightbox-alt="Photo for <%= long_date(@photo) %>" aria-label="View full-screen photo for <%= long_date(@photo) %>">
-    <picture>
-      <source media="(max-width: 700px)" srcset="<%= public_path(@photo.fetch(:mobile_image)) %>">
-      <img class="<%= "portrait-photo" if @photo.fetch(:height) > @photo.fetch(:width) %>" src="<%= public_path(@photo.fetch(:image)) %>" width="<%= @photo.fetch(:width) %>" height="<%= @photo.fetch(:height) %>" alt="Photo for <%= long_date(@photo) %>" decoding="async">
-    </picture>
-  </a>
+  <%= render("photo", photo: @photo, deferred: false) %>
   <p class="back-link"><a href="<%= public_path("index.html") %>">← Back to all photos</a></p>
 </article>

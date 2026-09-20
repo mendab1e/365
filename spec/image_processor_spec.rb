@@ -50,6 +50,27 @@ RSpec.describe YearInPhotos::ImageProcessor do
       expect(commands).to be_empty
     end
 
+    it "cleans partial conversions while preserving existing images and the source" do
+      date = Date.new(2026, 9, 19)
+      processor.process(source, date)
+      original = source.binread
+      failed = instance_double(Process::Status, success?: false)
+      failing_runner = lambda do |*arguments|
+        File.write(arguments.last, "partial conversion")
+        ["", "conversion failed", failed]
+      end
+      failing_processor = described_class.new(config:, command_runner: failing_runner)
+
+      expect { failing_processor.process(source, date) }
+        .to raise_error(/conversion failed/)
+
+      images = config.data_dir.join("images").children
+      expect(images.map { |path| path.basename.to_s })
+        .to contain_exactly("2026-09-19.jpg", "2026-09-19-mobile.jpg")
+      expect(images.map(&:read)).to eq(%w[processed processed])
+      expect(source.binread).to eq(original)
+    end
+
     it "restores both previous variants when publication fails" do
       desktop = config.data_dir.join("images/2026-09-19.jpg")
       mobile = config.data_dir.join("images/2026-09-19-mobile.jpg")

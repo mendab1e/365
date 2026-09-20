@@ -55,40 +55,43 @@ module YearInPhotos
     end
 
     def render_index
-      prepare_page(
+      render_page(
+        "index",
         title: @config.project_title,
         description: "A daily photo project.",
         path: "",
         social_photo: photos.first
       )
-      @content = render("index")
-      write("index.html", render("layout"))
     end
 
     def render_about
-      prepare_page(
+      render_page(
+        "about",
         title: "About — #{@config.project_title}",
         description: "About #{@config.project_title}.",
         path: "about.html",
         social_photo: photos.first
       )
-      @content = render("about")
-      write("about.html", render("layout"))
     end
 
     def render_posts
       photos.each do |photo|
         @photo = photo
-        prepare_page(
+        render_page(
+          "post",
           title: "#{long_date(photo)} — #{@config.project_title}",
           description: "Photo for #{long_date(photo)}.",
           path: "posts/#{photo.fetch(:date)}.html",
           social_photo: photo,
           type: "article"
         )
-        @content = render("post")
-        write("posts/#{photo.fetch(:date)}.html", render("layout"))
       end
+    end
+
+    def render_page(template, path:, **metadata)
+      prepare_page(path:, **metadata)
+      @content = render(template)
+      write(path.empty? ? "index.html" : path, render("layout"))
     end
 
     def prepare_page(title:, description:, path:, social_photo:, type: "website")
@@ -138,16 +141,15 @@ module YearInPhotos
     end
 
     def copy_assets
-      source = TEMPLATE_DIR.join("assets")
-      destination = @output_dir.join("assets")
-      FileUtils.mkdir_p(destination)
-      FileUtils.cp_r(source.children, destination)
+      FileUtils.cp_r(TEMPLATE_DIR.join("assets"), @output_dir.join("assets"))
     end
 
     def copy_images
-      destination = @output_dir.join("images")
-      FileUtils.mkdir_p(destination)
-      FileUtils.cp_r(@store.images_dir.children, destination) if @store.images_dir.exist?
+      photos.flat_map { |photo| photo.values_at(:image, :mobile_image) }.uniq.each do |path|
+        destination = @output_dir.join(path)
+        FileUtils.mkdir_p(destination.dirname)
+        FileUtils.cp(@config.data_dir.join(path), destination)
+      end
     end
 
     def photos
@@ -155,29 +157,30 @@ module YearInPhotos
     end
 
     def calendar
-      start_date = photos.first ? Date.iso8601(photos.first.fetch(:date)) : @now.call.to_date
+      return @calendar if @calendar
+
       dates = photos.map { |photo| Date.iso8601(photo.fetch(:date)) }
-      @calendar ||= Calendar.new(start_date:, photo_dates: dates)
+      @calendar = Calendar.new(start_date: dates.first || @now.call.to_date, photo_dates: dates)
     end
 
     def long_date(photo)
       Date.iso8601(photo.fetch(:date)).strftime("%A, %B %-d, %Y")
     end
 
-    def render(name)
-      render_template("#{name}.html.erb")
+    def render(name, **locals)
+      render_template("#{name}.html.erb", **locals)
     end
 
-    def render_template(filename)
-      ERB.new(TEMPLATE_DIR.join(filename).read, trim_mode: "-").result(binding)
+    def render_template(filename, **locals)
+      context = binding
+      locals.each { |name, value| context.local_variable_set(name, value) }
+      ERB.new(TEMPLATE_DIR.join(filename).read, trim_mode: "-").result(context)
     end
 
     def write(relative_path, contents)
       destination = @output_dir.join(relative_path)
-      temporary = destination.sub_ext("#{destination.extname}.tmp")
       FileUtils.mkdir_p(destination.dirname)
-      temporary.write(contents)
-      File.rename(temporary, destination)
+      destination.write(contents)
     end
 
     def public_path(path)

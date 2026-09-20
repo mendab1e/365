@@ -44,13 +44,33 @@ RSpec.describe YearInPhotos::SiteGenerator do
 
     it "removes pages and images that are no longer in the source data" do
       store.delete_photo(Date.new(2026, 9, 19))
-      FileUtils.rm_f(store.images_dir.children)
 
       generator.generate!
 
       expect(config.site_dir.join("posts/2026-09-19.html")).not_to exist
       expect(config.site_dir.join("images/2026-09-19.jpg")).not_to exist
       expect(config.site_dir.join("images/2026-09-19-mobile.jpg")).not_to exist
+    end
+
+    it "copies only referenced images, excluding replacement backups and staging files" do
+      %w[.photo.backup-token.jpg .photo.uploading-token.jpg orphan.jpg].each do |name|
+        store.images_dir.join(name).write("unpublished")
+      end
+
+      generator.generate!
+
+      expect(config.site_dir.join("images").children.map { |path| path.basename.to_s })
+        .to contain_exactly("2026-09-19.jpg", "2026-09-19-mobile.jpg")
+    end
+
+    it "preserves the live site when a referenced image is missing" do
+      original_index = config.site_dir.join("index.html").read
+      store.images_dir.join("2026-09-19-mobile.jpg").delete
+
+      expect { generator.generate! }.to raise_error(Errno::ENOENT)
+
+      expect(config.site_dir.join("index.html").read).to eq(original_index)
+      expect(config.site_dir.join("images/2026-09-19-mobile.jpg").read).to eq("mobile")
     end
 
     it "keeps the previous complete site when generation fails" do
@@ -86,6 +106,34 @@ RSpec.describe YearInPhotos::SiteGenerator do
       expect(index).to include('width="1500" height="2000"')
       expect(index).to include('style="aspect-ratio: auto 1500 / 2000"')
       expect(config.site_dir.join("assets/site.js")).to exist
+    end
+
+    it "renders usable fallback and dated-page pictures without deferred loading" do
+      index = config.site_dir.join("index.html").read
+      fallback = index.match(%r{<noscript>(.*?)</noscript>}m)[1]
+      post = config.site_dir.join("posts/2026-09-19.html").read
+
+      [fallback, post].each do |html|
+        expect(html).to include('src="/images/2026-09-19.jpg"')
+        expect(html).to include('srcset="/images/2026-09-19-mobile.jpg"')
+        expect(html).to include('width="1500" height="2000"')
+        expect(html).not_to include("data-src", "lazy-image")
+      end
+      expect(fallback).to include('loading="lazy"')
+      expect(post).not_to include('loading="lazy"', "<noscript>")
+    end
+
+    it "keeps canonical URLs distinct from output filenames below a site subpath" do
+      nested_config = build_config(root:, site_url: "https://photos.example.test/project")
+      described_class.new(config: nested_config, store:, now: -> { now }).generate!
+
+      { "index.html" => "", "about.html" => "about.html",
+        "posts/2026-09-19.html" => "posts/2026-09-19.html" }.each do |file, path|
+        html = config.site_dir.join(file).read
+        expect(html).to include(
+          %(<link rel="canonical" href="https://photos.example.test/project/#{path}">)
+        )
+      end
     end
 
     it "opens photos at full resolution while keeping date titles linked to posts" do

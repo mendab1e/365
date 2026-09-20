@@ -53,7 +53,7 @@
     document.querySelectorAll(".lightbox-trigger").forEach((trigger) => {
       trigger.addEventListener("click", (event) => {
         event.preventDefault();
-        lightboxImage.src = trigger.dataset.lightboxSrc;
+        lightboxImage.src = trigger.href;
         lightboxImage.alt = trigger.dataset.lightboxAlt;
         lightbox.showModal();
       });

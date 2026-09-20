@@ -1,0 +1,8 @@
+<a class="photo-link lightbox-trigger" href="<%= public_path(photo.fetch(:image)) %>" data-lightbox-alt="Photo for <%= long_date(photo) %>" aria-label="View full-screen photo for <%= long_date(photo) %>">
+  <%= render("picture", photo:, deferred:, lazy: deferred) %>
+  <% if deferred %>
+    <noscript>
+      <%= render("picture", photo:, deferred: false, lazy: true) %>
+    </noscript>
+  <% end %>
+</a>

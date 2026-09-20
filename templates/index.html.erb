@@ -8,18 +8,7 @@
     <% photos.reverse_each do |photo| %>
       <article class="photo-post" id="photo-<%= photo.fetch(:date) %>">
         <h1><a href="<%= public_path("posts/#{photo.fetch(:date)}.html") %>"><%= long_date(photo) %></a></h1>
-        <a class="photo-link lightbox-trigger" href="<%= public_path(photo.fetch(:image)) %>" data-lightbox-src="<%= public_path(photo.fetch(:image)) %>" data-lightbox-alt="Photo for <%= long_date(photo) %>" aria-label="View full-screen photo for <%= long_date(photo) %>">
-          <picture>
-            <source media="(max-width: 700px)" data-srcset="<%= public_path(photo.fetch(:mobile_image)) %>">
-            <img class="lazy-image<%= " portrait-photo" if photo.fetch(:height) > photo.fetch(:width) %>" data-src="<%= public_path(photo.fetch(:image)) %>" width="<%= photo.fetch(:width) %>" height="<%= photo.fetch(:height) %>" style="aspect-ratio: auto <%= photo.fetch(:width) %> / <%= photo.fetch(:height) %>" alt="Photo for <%= long_date(photo) %>" loading="lazy" decoding="async">
-          </picture>
-          <noscript>
-            <picture>
-              <source media="(max-width: 700px)" srcset="<%= public_path(photo.fetch(:mobile_image)) %>">
-              <img class="<%= "portrait-photo" if photo.fetch(:height) > photo.fetch(:width) %>" src="<%= public_path(photo.fetch(:image)) %>" width="<%= photo.fetch(:width) %>" height="<%= photo.fetch(:height) %>" alt="Photo for <%= long_date(photo) %>" loading="lazy" decoding="async">
-            </picture>
-          </noscript>
-        </a>
+        <%= render("photo", photo:, deferred: true) %>
       </article>
     <% end %>
   <% end %>
