@@ -10,6 +10,28 @@
     });
   }
 
+  const subscribeMenu = document.querySelector(".subscribe-menu");
+  const subscribeToggle = document.querySelector(".subscribe-toggle");
+
+  if (subscribeMenu && subscribeToggle) {
+    const setSubscribeOpen = (isOpen) => {
+      subscribeMenu.dataset.open = isOpen.toString();
+      subscribeToggle.setAttribute("aria-expanded", isOpen.toString());
+    };
+
+    subscribeToggle.addEventListener("click", () => {
+      setSubscribeOpen(subscribeMenu.dataset.open !== "true");
+    });
+
+    document.addEventListener("click", (event) => {
+      if (!subscribeMenu.contains(event.target)) setSubscribeOpen(false);
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") setSubscribeOpen(false);
+    });
+  }
+
   const loadImage = (image) => {
     const picture = image.closest("picture");
     const source = picture?.querySelector("source[data-srcset]");

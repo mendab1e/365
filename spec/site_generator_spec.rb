@@ -179,17 +179,23 @@ RSpec.describe YearInPhotos::SiteGenerator do
       described_class.new(config: linked_config, store:, now: -> { now }).generate!
       index = linked_config.site_dir.join("index.html").read
 
-      expect(index).to include('<details class="subscribe-menu">')
-      expect(index).to include("<summary>Subscribe</summary>")
-      submenu = index.match(%r{<span class="subscribe-submenu">(.*?)</span>}m)[1]
+      expect(index).to include('<span class="subscribe-menu" data-open="false">')
+      expect(index).to include('class="subscribe-toggle"')
+      expect(index).to include('aria-controls="subscribe-submenu" aria-expanded="false"')
+      submenu = index.match(%r{<span class="subscribe-submenu".*?>(.*?)</span>}m)[1]
       expect(submenu.index("feed.xml")).to be < submenu.index("https://t.me/photo_channel")
       expect(submenu).to include('href="/feed.xml">RSS</a>')
       expect(submenu).to include('href="https://t.me/photo_channel">Telegram</a>')
 
+      navigation = index.match(%r{<nav class="primary-nav".*?</nav>}m)[0]
+      expect(navigation.scan('href="/feed.xml"').size).to eq(1)
+      expect(navigation.scan('href="https://t.me/photo_channel"').size).to eq(1)
+
       styles = linked_config.site_dir.join("assets/style.css").read
-      expect(styles).to include(".desktop-subscription-link {\n    display: none;")
-      expect(styles).to include(".subscribe-menu {\n    display: block;")
-      expect(styles).to include(".subscribe-menu[open] .subscribe-submenu {\n    display: grid;")
+      expect(styles).to include(".subscribe-menu {\n  display: contents;")
+      expect(styles).to include(".subscribe-toggle {\n  display: none;")
+      expect(styles).to include(".subscribe-menu[data-open=\"true\"] .subscribe-submenu")
+      expect(styles).to include(".primary-nav a {\n  cursor: pointer;")
     end
 
     it "renders RSS directly and omits Subscribe when no Telegram channel is configured" do

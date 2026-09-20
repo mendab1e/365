@@ -37,15 +37,13 @@
           <button class="calendar-toggle" type="button" aria-controls="year-calendar" aria-expanded="false">Calendar</button>
           <a href="<%= public_path("about.html") %>">About</a>
           <% if @config.telegram_channel_url %>
-            <a class="desktop-subscription-link" href="<%= public_path("feed.xml") %>">RSS</a>
-            <a class="desktop-subscription-link" href="<%= h(@config.telegram_channel_url) %>">Telegram</a>
-            <details class="subscribe-menu">
-              <summary>Subscribe</summary>
-              <span class="subscribe-submenu">
+            <span class="subscribe-menu" data-open="false">
+              <button class="subscribe-toggle" type="button" aria-controls="subscribe-submenu" aria-expanded="false">Subscribe</button>
+              <span class="subscribe-submenu" id="subscribe-submenu">
                 <a href="<%= public_path("feed.xml") %>">RSS</a>
                 <a href="<%= h(@config.telegram_channel_url) %>">Telegram</a>
               </span>
-            </details>
+            </span>
           <% else %>
             <a href="<%= public_path("feed.xml") %>">RSS</a>
           <% end %>

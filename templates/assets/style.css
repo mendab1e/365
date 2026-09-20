@@ -51,6 +51,7 @@ footer {
 }
 
 .primary-nav a {
+  cursor: pointer;
   text-decoration: none;
 }
 
@@ -78,7 +79,15 @@ footer {
 }
 
 .subscribe-menu {
+  display: contents;
+}
+
+.subscribe-toggle {
   display: none;
+}
+
+.subscribe-submenu {
+  display: contents;
 }
 
 .year-calendar {
@@ -396,22 +405,19 @@ footer {
     gap: 14px;
   }
 
-  .desktop-subscription-link {
-    display: none;
-  }
-
   .subscribe-menu {
     display: block;
     position: relative;
   }
 
-  .subscribe-menu summary {
+  .subscribe-toggle {
+    background: none;
+    border: 0;
+    color: inherit;
     cursor: pointer;
-    list-style: none;
-  }
-
-  .subscribe-menu summary::-webkit-details-marker {
-    display: none;
+    display: block;
+    font: inherit;
+    padding: 0;
   }
 
   .subscribe-submenu {
@@ -428,7 +434,7 @@ footer {
     z-index: 3;
   }
 
-  .subscribe-menu[open] .subscribe-submenu {
+  .subscribe-menu[data-open="true"] .subscribe-submenu {
     display: grid;
   }
 
