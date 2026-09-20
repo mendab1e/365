@@ -26,9 +26,9 @@ install -m 600 .env.example .env
 set -a
 . ./.env
 set +a
-rbenv exec bundle install
-rbenv exec bundle exec bin/rebuild
-rbenv exec bundle exec bin/365_bot
+bundle install
+bundle exec bin/rebuild
+bundle exec bin/365_bot
 ```
 
 The bot only accepts messages from `TELEGRAM_CHAT_ID` sent by `TELEGRAM_USER_ID`. Both values are

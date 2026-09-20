@@ -196,10 +196,27 @@ RSpec.describe YearInPhotos::SiteGenerator do
       expect(index).to include("© Example Author")
       expect(index).to include('href="https://github.com/mendab1e/365"')
       expect(index).to include('class="github-link"')
-      expect(index).to include("<span>365</span>")
+      expect(index).to include("<span>365 - one photograph, every day, for a year</span>")
       expect(index).to include('<svg viewBox="0 0 16 16" aria-hidden="true">')
       expect(styles).to include("footer {\n  align-items: center;")
-      expect(styles).to include(".site-footer {\n    padding-right: 76px;")
+      expect(styles).to include(".site-footer {\n    column-gap: 16px;")
+      expect(styles).to include("justify-content: flex-start;")
+      expect(styles).to include("padding-right: 76px;")
+      expect(styles).to include(".footer-copyright {\n    text-align: left;")
+      expect(index.index('class="github-link"')).to be < index.index('class="footer-copyright"')
+    end
+
+    it "centers photographed dates inside compact calendar rectangles" do
+      styles = config.site_dir.join("assets/style.css").read
+
+      expect(styles).to include(".calendar-day.has-photo {")
+      expect(styles).to include("border-radius: 2px;")
+      expect(styles).to include("display: grid;")
+      expect(styles).to include("font-variant-numeric: tabular-nums;")
+      expect(styles).to include("line-height: 1;")
+      expect(styles).to include("place-items: center;")
+      expect(styles).to include("transform: translateY(-1px);")
+      expect(styles).to include("width: 18px;")
     end
 
     it "folds next year's matching month into a red calendar layer" do

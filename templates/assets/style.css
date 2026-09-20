@@ -120,16 +120,25 @@ footer {
 
 .calendar-day.has-photo {
   background: var(--ink);
-  border-radius: 50%;
+  border-radius: 2px;
   color: white;
+  display: grid;
   font-weight: 800;
+  font-variant-numeric: tabular-nums;
   justify-self: center;
-  width: 14px;
+  line-height: 1;
+  place-items: center;
+  text-align: center;
+  width: 18px;
 }
 
 .calendar-day.has-photo:hover,
 .calendar-day.has-photo:focus-visible {
   text-decoration: underline;
+}
+
+.calendar-day.has-photo > span {
+  transform: translateY(-1px);
 }
 
 .calendar-day.later-year-photo {
@@ -312,12 +321,18 @@ footer {
   align-items: center;
   border-top: 1px solid var(--line);
   color: var(--muted);
+  column-gap: 32px;
   display: flex;
   font-size: 0.78rem;
   justify-content: space-between;
   margin-top: 90px;
   padding-bottom: 34px;
   padding-top: 24px;
+}
+
+.footer-copyright {
+  text-align: right;
+  white-space: nowrap;
 }
 
 .github-link {
@@ -356,7 +371,13 @@ footer {
   }
 
   .site-footer {
+    column-gap: 16px;
+    justify-content: flex-start;
     padding-right: 76px;
+  }
+
+  .footer-copyright {
+    text-align: left;
   }
 
   .primary-nav {
@@ -388,7 +409,7 @@ footer {
   }
 
   .calendar-day.has-photo {
-    width: 18px;
+    width: 22px;
   }
 
   .feed,
