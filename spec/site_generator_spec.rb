@@ -42,6 +42,27 @@ RSpec.describe YearInPhotos::SiteGenerator do
       expect(old_page).to include("posts/2026-09-20.html")
     end
 
+    it "removes pages and images that are no longer in the source data" do
+      store.delete_photo(Date.new(2026, 9, 19))
+      FileUtils.rm_f(store.images_dir.children)
+
+      generator.generate!
+
+      expect(config.site_dir.join("posts/2026-09-19.html")).not_to exist
+      expect(config.site_dir.join("images/2026-09-19.jpg")).not_to exist
+      expect(config.site_dir.join("images/2026-09-19-mobile.jpg")).not_to exist
+    end
+
+    it "keeps the previous complete site when generation fails" do
+      original_index = config.site_dir.join("index.html").read
+      allow(generator).to receive(:render_about).and_raise("template failure")
+
+      expect { generator.generate! }.to raise_error("template failure")
+
+      expect(config.site_dir.join("index.html").read).to eq(original_index)
+      expect(config.site_dir.join("posts/2026-09-19.html")).to exist
+    end
+
     it "uses the mobile image in a responsive picture source" do
       index = config.site_dir.join("index.html").read
 

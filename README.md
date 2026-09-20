@@ -60,7 +60,10 @@ the first upload it begins with the current month.
 
 Point nginx, Caddy, an object-storage static host, or any equivalent at `public/`. `SITE_URL` must
 be the public root URL; subdirectory URLs are supported. The included systemd unit is an example
-for keeping the bot running. Adapt its user, paths, and rbenv initialization to your server.
+for keeping the bot running. It expects a dedicated `year-in-photos` user and group. Adapt its
+paths and rbenv initialization to your server, and give the service account write access to
+`DATA_DIR`, `SITE_DIR`, and the parent directory of `SITE_DIR`. The parent is needed because a
+completed site is published by atomically replacing the previous output directory.
 
 For nginx, the essential site block is:
 

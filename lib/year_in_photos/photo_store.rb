@@ -30,6 +30,26 @@ module YearInPhotos
       write_json(photos_path, collection.sort_by { |item| item.fetch(:date) })
     end
 
+    def delete_photo(date)
+      collection = photos.reject { |item| item.fetch(:date) == date.iso8601 }
+      write_json(photos_path, collection)
+    end
+
+    def save_photo_with_rollback(photo)
+      date = Date.iso8601(photo.fetch(:date))
+      previous_photo = photo_on(date)
+      saved = false
+      committed = false
+      begin
+        save_photo(photo)
+        saved = true
+        yield
+        committed = true
+      ensure
+        restore_photo(previous_photo, date) if saved && !committed
+      end
+    end
+
     def first_date
       value = photos.first&.fetch(:date, nil)
       Date.iso8601(value) if value
@@ -61,6 +81,10 @@ module YearInPhotos
     end
 
     private
+
+    def restore_photo(previous_photo, date)
+      previous_photo ? save_photo(previous_photo) : delete_photo(date)
+    end
 
     def photos_path
       data_dir.join("photos.json")

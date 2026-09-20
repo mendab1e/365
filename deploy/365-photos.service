@@ -5,11 +5,23 @@ Wants=network-online.target
 
 [Service]
 Type=simple
+User=year-in-photos
+Group=year-in-photos
 WorkingDirectory=/opt/365-photos
 EnvironmentFile=/opt/365-photos/.env
 ExecStart=/bin/bash -lc 'rbenv exec bundle exec bin/365_bot'
 Restart=always
 RestartSec=5
+UMask=0022
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=read-only
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
 
 [Install]
 WantedBy=multi-user.target

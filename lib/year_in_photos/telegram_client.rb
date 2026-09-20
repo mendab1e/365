@@ -8,8 +8,9 @@ module YearInPhotos
   class TelegramClient
     API_ROOT = "https://api.telegram.org"
 
-    def initialize(token)
+    def initialize(token, http_factory: Net::HTTP.method(:new))
       @token = token
+      @http_factory = http_factory
     end
 
     def updates(offset: nil, timeout: 50)
@@ -46,15 +47,21 @@ module YearInPhotos
       request = Net::HTTP::Post.new(uri)
       request.set_form_data(params)
       response = http_for(uri, read_timeout:).request(request)
-      payload = JSON.parse(response.body)
+      payload = parse_payload(response, method)
       return payload.fetch("result") if response.is_a?(Net::HTTPSuccess) && payload["ok"]
 
       description = payload.fetch("description", "HTTP #{response.code}")
       raise "Telegram #{method} failed: #{description}"
     end
 
+    def parse_payload(response, method)
+      JSON.parse(response.body)
+    rescue JSON::ParserError
+      raise "Telegram #{method} failed: HTTP #{response.code} returned invalid JSON"
+    end
+
     def http_for(uri, read_timeout: 30)
-      Net::HTTP.new(uri.host, uri.port).tap do |http|
+      @http_factory.call(uri.host, uri.port).tap do |http|
         http.use_ssl = true
         http.open_timeout = 10
         http.read_timeout = read_timeout

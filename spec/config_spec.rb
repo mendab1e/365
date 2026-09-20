@@ -43,5 +43,33 @@ RSpec.describe YearInPhotos::Config do
 
       expect(config.telegram_channel_url).to eq("https://t.me/+invite-code")
     end
+
+    it "rejects site URLs with a query string" do
+      ENV["SITE_URL"] = "https://photos.example.test/project?preview=1"
+
+      expect { described_class.from_env(require_telegram: false) }
+        .to raise_error(ArgumentError, /without a query string or fragment/)
+    end
+
+    it "rejects site URLs with a fragment" do
+      ENV["SITE_URL"] = "https://photos.example.test/project#preview"
+
+      expect { described_class.from_env(require_telegram: false) }
+        .to raise_error(ArgumentError, /without a query string or fragment/)
+    end
+  end
+
+  describe "#absolute_url" do
+    it "constructs URLs below the configured site path" do
+      config = build_config(
+        root: Pathname.new(Dir.mktmpdir),
+        site_url: "https://photos.example.test/project"
+      )
+
+      expect(config.absolute_url("posts/2026-09-19.html"))
+        .to eq("https://photos.example.test/project/posts/2026-09-19.html")
+    ensure
+      FileUtils.rm_rf(config&.site_dir&.dirname)
+    end
   end
 end

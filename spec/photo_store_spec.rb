@@ -23,6 +23,14 @@ RSpec.describe YearInPhotos::PhotoStore do
 
       expect(store.photos).to contain_exactly(replacement)
     end
+
+    it "can remove a photo when a failed publication is rolled back" do
+      store.save_photo(original)
+
+      store.delete_photo(Date.iso8601(original.fetch(:date)))
+
+      expect(store.photos).to be_empty
+    end
   end
 
   describe "reminders" do

@@ -8,11 +8,11 @@ RSpec.describe YearInPhotos::Bot do
       config:,
       store:,
       services: described_class::Services.new(
-        generator: instance_double(YearInPhotos::SiteGenerator),
-        processor: instance_double(YearInPhotos::ImageProcessor),
+        generator:,
+        processor:,
         telegram:
       ),
-      clock: class_double(Time, now: current_time),
+      clock:,
       logger: instance_double(Logger, info: nil, error: nil)
     )
   end
@@ -20,7 +20,10 @@ RSpec.describe YearInPhotos::Bot do
   let(:root) { Pathname.new(Dir.mktmpdir) }
   let(:config) { build_config(root:) }
   let(:store) { YearInPhotos::PhotoStore.new(config.data_dir) }
+  let(:generator) { instance_double(YearInPhotos::SiteGenerator, generate!: true) }
+  let(:processor) { instance_double(YearInPhotos::ImageProcessor) }
   let(:telegram) { instance_double(YearInPhotos::TelegramClient, send_message: true) }
+  let(:clock) { class_double(Time, now: current_time) }
   let(:current_time) { Time.new(2026, 9, 19, 21, 1, 0, "+02:00") }
 
   after { FileUtils.rm_rf(root) }
@@ -116,6 +119,113 @@ RSpec.describe YearInPhotos::Bot do
 
         expect(telegram).not_to have_received(:send_message)
       end
+    end
+  end
+
+  describe "#handle_update" do
+    let(:sent_time) { Time.new(2026, 9, 19, 23, 59, 59, "+02:00") }
+    let(:current_time) { Time.new(2026, 9, 20, 0, 0, 1, "+02:00") }
+    let(:timestamp) { sent_time.to_i }
+    let(:photo) do
+      {
+        date: sent_time.to_date.iso8601,
+        image: "images/2026-09-19.jpg",
+        mobile_image: "images/2026-09-19-mobile.jpg",
+        width: 1500,
+        height: 2000
+      }
+    end
+    let(:update) do
+      {
+        "message" => {
+          "date" => timestamp,
+          "chat" => { "id" => 42 },
+          "from" => { "id" => 7 },
+          "photo" => [{ "file_id" => "small" }, { "file_id" => "large" }]
+        }
+      }
+    end
+
+    before do
+      allow(clock).to receive(:at).with(timestamp).and_return(sent_time)
+      allow(telegram).to receive(:file_path).with("large").and_return("photos/upload.jpg")
+      allow(telegram).to receive(:download) do |_path, destination|
+        destination.write("source")
+        destination.rewind
+      end
+      allow(processor).to receive(:process) do |_path, date, &publication|
+        expect(date).to eq(sent_time.to_date)
+        publication.call(photo)
+        photo
+      end
+    end
+
+    it "uses the Telegram message timestamp when processing crosses midnight" do
+      bot.handle_update(update)
+
+      expect(store.photo_on(sent_time.to_date)).to eq(photo)
+      expect(store.photo_on(current_time.to_date)).to be_nil
+      expect(telegram).to have_received(:send_message).with("42", /September 19, 2026/)
+    end
+
+    it "restores the previous metadata when site generation fails" do
+      previous = photo.merge(width: 1000, height: 1000)
+      store.save_photo(previous)
+      allow(generator).to receive(:generate!).and_raise("template failure")
+
+      bot.handle_update(update)
+
+      expect(store.photo_on(sent_time.to_date)).to eq(previous)
+      expect(telegram).to have_received(:send_message).with("42", /template failure/)
+    end
+
+    it "ignores messages from a different chat" do
+      update.fetch("message").fetch("chat")["id"] = 99
+
+      bot.handle_update(update)
+
+      expect(processor).not_to have_received(:process)
+      expect(telegram).not_to have_received(:send_message)
+    end
+
+    it "dispatches a group command addressed to the bot" do
+      command_update = {
+        "message" => {
+          "date" => timestamp,
+          "chat" => { "id" => 42 },
+          "from" => { "id" => 7 },
+          "text" => "/status@photo_bot"
+        }
+      }
+
+      bot.handle_update(command_update)
+
+      expect(telegram).to have_received(:send_message).with("42", /still missing/)
+    end
+
+    it "waits for an in-progress upload before deciding to send a reminder" do
+      processing = Queue.new
+      release_upload = Queue.new
+      allow(processor).to receive(:process) do |_path, _date, &publication|
+        processing << true
+        release_upload.pop
+        publication.call(photo)
+      end
+
+      upload_thread = Thread.new { bot.handle_update(update) }
+      processing.pop
+      reminder_thread = Thread.new { bot.check_reminder(sent_time) }
+
+      expect(reminder_thread.join(0.05)).to be_nil
+      release_upload << true
+      upload_thread.join
+      reminder_thread.join
+
+      expect(telegram).not_to have_received(:send_message).with("42", /still missing/)
+    ensure
+      release_upload << true if upload_thread&.alive?
+      upload_thread&.join
+      reminder_thread&.join
     end
   end
 

@@ -45,25 +45,29 @@ module YearInPhotos
     end
 
     def check_reminder(now = @clock.now)
-      date = now.to_date
-      return if now.hour < @config.reminder_hour
-      return if @store.photo_on(date) || @store.reminded?(date)
+      @write_lock.synchronize do
+        date = now.to_date
+        return if now.hour < @config.reminder_hour
+        return if @store.photo_on(date) || @store.reminded?(date)
 
-      reply("It’s after #{@config.reminder_hour}:00 and today’s photo is still missing 📷")
-      @store.mark_reminded(date)
+        reply("It’s after #{@config.reminder_hour}:00 and today’s photo is still missing 📷")
+        @store.mark_reminded(date)
+      end
     end
 
     def check_notification(now = @clock.now)
-      return unless @config.notification_chat_id
+      @write_lock.synchronize do
+        return unless @config.notification_chat_id
 
-      date = now.to_date
-      return if @store.notification_published?(date)
-      return if minutes_since_midnight(now) < NOTIFICATION_HOUR * 60
+        date = now.to_date
+        return if @store.notification_published?(date)
+        return if minutes_since_midnight(now) < NOTIFICATION_HOUR * 60
 
-      if late_notification_time?(now)
-        publish_notification_if_ready(date)
-      else
-        schedule_notification(date)
+        if late_notification_time?(now)
+          publish_notification_if_ready(date)
+        else
+          schedule_notification(date)
+        end
       end
     end
 
@@ -71,9 +75,9 @@ module YearInPhotos
 
     def dispatch_message(message)
       file_id = image_file_id(message)
-      return receive_photo(file_id) if file_id
+      return receive_photo(file_id, message_date(message)) if file_id
 
-      case message["text"]&.split&.first
+      case command_name(message)
       when "/status" then send_status
       when "/rebuild" then rebuild
       else reply("Send today’s photo as an image or image file. Commands: /status, /rebuild")
@@ -81,7 +85,7 @@ module YearInPhotos
     end
 
     def rebuild
-      @generator.generate!
+      @write_lock.synchronize { @generator.generate! }
       reply("Site rebuilt.")
     end
 
@@ -110,24 +114,28 @@ module YearInPhotos
       end
     end
 
-    def receive_photo(file_id)
-      date = @clock.now.to_date
-      file_path = @telegram.file_path(file_id)
-      Tempfile.create(["telegram-photo", File.extname(file_path)]) do |source|
-        @telegram.download(file_path, source)
-        @write_lock.synchronize do
-          photo = @processor.process(source.path, date)
-          @store.save_photo(photo)
-          @generator.generate!
+    def receive_photo(file_id, date)
+      @write_lock.synchronize do
+        file_path = @telegram.file_path(file_id)
+        Tempfile.create(["telegram-photo", File.extname(file_path)]) do |source|
+          @telegram.download(file_path, source)
+          @processor.process(source.path, date) do |photo|
+            @store.save_photo_with_rollback(photo) { @generator.generate! }
+          end
         end
       end
       reply("Published #{date.strftime('%B %-d, %Y')} ✓")
     end
 
     def send_status
-      today = @clock.now.to_date
-      status = @store.photo_on(today) ? "published" : "still missing"
-      reply("Today’s photo is #{status}. #{@store.photos.length} photo(s) published in total.")
+      text = @write_lock.synchronize do
+        today = @clock.now.to_date
+        photos = @store.photos
+        published = photos.any? { |photo| photo.fetch(:date) == today.iso8601 }
+        status = published ? "published" : "still missing"
+        "Today’s photo is #{status}. #{photos.length} photo(s) published in total."
+      end
+      reply(text)
     end
 
     def authorized?(message)
@@ -143,6 +151,16 @@ module YearInPhotos
       return document["file_id"] if document&.fetch("mime_type", "")&.start_with?("image/")
 
       message.fetch("photo", []).last&.fetch("file_id", nil)
+    end
+
+    def command_name(message)
+      token = message["text"].to_s.split.first
+      token&.split("@", 2)&.first
+    end
+
+    def message_date(message)
+      timestamp = message.fetch("date", nil)
+      timestamp ? @clock.at(Integer(timestamp)).to_date : @clock.now.to_date
     end
 
     def reply(text)

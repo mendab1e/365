@@ -49,7 +49,9 @@ module YearInPhotos
 
     def validate!
       raise ArgumentError, "REMINDER_HOUR must be from 0 to 23" unless (0..23).cover?(reminder_hour)
-      raise ArgumentError, "SITE_URL must be an absolute HTTP(S) URL" unless absolute_http_url?
+
+      message = "SITE_URL must be an absolute HTTP(S) URL without a query string or fragment"
+      raise ArgumentError, message unless valid_site_url?
       if telegram_channel_url && !absolute_http_url?(telegram_channel_url)
         raise ArgumentError, "TELEGRAM_CHANNEL_URL must be an absolute HTTP(S) URL"
       end
@@ -68,7 +70,7 @@ module YearInPhotos
     end
 
     def absolute_url(path)
-      "#{site_url}/#{path.sub(%r{\A/}, '')}".sub(%r{(?<!:)//+}, "/")
+      URI(site_url).tap { |uri| uri.path = public_path(path) }.to_s
     end
 
     class << self
@@ -90,6 +92,13 @@ module YearInPhotos
     end
 
     private
+
+    def valid_site_url?
+      uri = URI(site_url)
+      absolute_http_url?(site_url) && uri.query.nil? && uri.fragment.nil?
+    rescue URI::InvalidURIError
+      false
+    end
 
     def absolute_http_url?(url = site_url)
       uri = URI(url)

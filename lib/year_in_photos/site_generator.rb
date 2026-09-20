@@ -26,18 +26,33 @@ module YearInPhotos
     def generate!
       @photos = nil
       @calendar = nil
-      FileUtils.mkdir_p([@config.site_dir, @config.site_dir.join("posts")])
+      publisher.publish do |output_dir|
+        @output_dir = output_dir
+        begin
+          generate_site_files
+        ensure
+          @output_dir = nil
+        end
+      end
+    end
+
+    private
+
+    def generate_site_files
+      FileUtils.mkdir_p(@output_dir.join("posts"))
       copy_assets
       copy_images
       render_index
       render_about
       render_posts
       render_feed
-      render_sitemap
-      render_robots
+      write("sitemap.xml", render_template("sitemap.xml.erb"))
+      write("robots.txt", render_template("robots.txt.erb"))
     end
 
-    private
+    def publisher
+      @publisher ||= SitePublisher.new(site_dir: @config.site_dir, data_dir: @config.data_dir)
+    end
 
     def render_index
       prepare_page(
@@ -98,14 +113,6 @@ module YearInPhotos
       write("feed.xml", feed.to_s)
     end
 
-    def render_sitemap
-      write("sitemap.xml", render_template("sitemap.xml.erb"))
-    end
-
-    def render_robots
-      write("robots.txt", render_template("robots.txt.erb"))
-    end
-
     def add_feed_item(maker, photo)
       data = feed_item_data(photo)
       maker.items.new_item do |item|
@@ -132,13 +139,13 @@ module YearInPhotos
 
     def copy_assets
       source = TEMPLATE_DIR.join("assets")
-      destination = @config.site_dir.join("assets")
+      destination = @output_dir.join("assets")
       FileUtils.mkdir_p(destination)
       FileUtils.cp_r(source.children, destination)
     end
 
     def copy_images
-      destination = @config.site_dir.join("images")
+      destination = @output_dir.join("images")
       FileUtils.mkdir_p(destination)
       FileUtils.cp_r(@store.images_dir.children, destination) if @store.images_dir.exist?
     end
@@ -148,7 +155,7 @@ module YearInPhotos
     end
 
     def calendar
-      start_date = @store.first_date || Date.today
+      start_date = photos.first ? Date.iso8601(photos.first.fetch(:date)) : @now.call.to_date
       dates = photos.map { |photo| Date.iso8601(photo.fetch(:date)) }
       @calendar ||= Calendar.new(start_date:, photo_dates: dates)
     end
@@ -166,7 +173,7 @@ module YearInPhotos
     end
 
     def write(relative_path, contents)
-      destination = @config.site_dir.join(relative_path)
+      destination = @output_dir.join(relative_path)
       temporary = destination.sub_ext("#{destination.extname}.tmp")
       FileUtils.mkdir_p(destination.dirname)
       temporary.write(contents)

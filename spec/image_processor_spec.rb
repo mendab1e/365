@@ -36,5 +36,43 @@ RSpec.describe YearInPhotos::ImageProcessor do
       expect(conversions).to all(include("-auto-orient", "-strip", "-quality", "80"))
       expect(result).to include(width: 1500, height: 2000)
     end
+
+    it "restores both previous variants when publication fails" do
+      desktop = config.data_dir.join("images/2026-09-19.jpg")
+      mobile = config.data_dir.join("images/2026-09-19-mobile.jpg")
+      FileUtils.mkdir_p(desktop.dirname)
+      desktop.write("old desktop")
+      mobile.write("old mobile")
+
+      expect do
+        processor.process(source, Date.new(2026, 9, 19)) { raise "publication failed" }
+      end.to raise_error("publication failed")
+
+      expect(desktop.read).to eq("old desktop")
+      expect(mobile.read).to eq("old mobile")
+      expect(desktop.dirname.children.map(&:to_s).grep(/uploading|backup/)).to be_empty
+    end
+
+    it "restores both previous variants when the second install fails" do
+      desktop = config.data_dir.join("images/2026-09-19.jpg")
+      mobile = config.data_dir.join("images/2026-09-19-mobile.jpg")
+      FileUtils.mkdir_p(desktop.dirname)
+      desktop.write("old desktop")
+      mobile.write("old mobile")
+      rename = File.method(:rename)
+      allow(File).to receive(:rename) do |source_path, destination_path|
+        if source_path.to_s.match?(/mobile\.uploading-.*\.jpg\z/)
+          raise SystemCallError, "simulated install failure"
+        end
+
+        rename.call(source_path, destination_path)
+      end
+
+      expect { processor.process(source, Date.new(2026, 9, 19)) }
+        .to raise_error(SystemCallError, /simulated install failure/)
+
+      expect(desktop.read).to eq("old desktop")
+      expect(mobile.read).to eq("old mobile")
+    end
   end
 end

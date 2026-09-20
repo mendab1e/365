@@ -47,5 +47,22 @@ RSpec.describe YearInPhotos::Calendar do
 
       expect(day.photo_date).to eq(new_date)
     end
+
+    it "includes a leap day from a later folded year" do
+      leap_day = Date.new(2028, 2, 29)
+      folded = described_class.new(start_date: Date.new(2026, 2, 1), photo_dates: [leap_day])
+      february = folded.months.first
+      day = february.weeks.flatten.find do |candidate|
+        candidate.in_month && candidate.date.day == 29
+      end
+
+      expect(february.later_years).to eq([2028])
+      expect(day.photo_date).to eq(leap_day)
+      expect(day).to be_later_year
+    end
+
+    it "memoizes its immutable month grid" do
+      expect(calendar.months).to equal(calendar.months)
+    end
   end
 end
