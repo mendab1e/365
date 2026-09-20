@@ -15,7 +15,8 @@ that requirement. A temporary loopback-only static server is acceptable for loca
 ## Runtime and development rules
 
 - Ruby is pinned by `.ruby-version` and must always run through rbenv.
-- Production image processing requires ImageMagick 7 and the `magick` executable.
+- Production image processing prefers ImageMagick 7 (`magick`), with a fallback to ImageMagick 6
+  (`convert` and `identify`). All configured resource limits, including `list-length`, are required.
 - Use RSpec for behavior tests and RuboCop for Ruby style.
 - Run the full verification commands after code or template changes:
 

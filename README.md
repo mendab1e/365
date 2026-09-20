@@ -12,7 +12,9 @@ contains the latest links.
 ## Requirements
 
 - Ruby 3.4.8 managed by rbenv
-- ImageMagick 7 (`magick` on `PATH`)
+- ImageMagick 7 (`magick` on `PATH`) or ImageMagick 6 (`convert` and `identify` on `PATH`).
+  The bot prefers `magick` and falls back automatically when it is unavailable. The installed
+  version must support all configured resource limits, including `list-length`.
 - A Telegram bot token from BotFather
 - A static web server or static hosting provider
 

@@ -10,10 +10,13 @@ RSpec.describe YearInPhotos::ImageProcessor do
   let(:source) { root.join("incoming.jpg") }
   let(:commands) { [] }
   let(:success) { instance_double(Process::Status, success?: true) }
+  let(:missing_commands) { [] }
   let(:command_runner) do
     lambda do |*arguments|
       commands << arguments
-      if arguments[1] == "identify"
+      raise Errno::ENOENT, arguments.first if missing_commands.include?(arguments.first)
+
+      if arguments[1] == "identify" || arguments.first == "identify"
         ["1500 2000", "", success]
       else
         FileUtils.mkdir_p(Pathname.new(arguments.last).dirname)
@@ -27,6 +30,42 @@ RSpec.describe YearInPhotos::ImageProcessor do
   after { FileUtils.rm_rf(root) }
 
   describe "#process" do
+    context "when magick is unavailable" do
+      let(:missing_commands) { ["magick"] }
+
+      it "uses convert and identify with the same resource limits and preserves the source" do
+        original = source.binread
+        result = processor.process(source, Date.new(2026, 9, 19))
+
+        expect(commands.map(&:first)).to eq(%w[magick convert convert identify])
+        commands.drop(1).each do |command|
+          expect(command[1, described_class::RESOURCE_LIMITS.length])
+            .to eq(described_class::RESOURCE_LIMITS)
+        end
+        expect(result).to include(width: 1500, height: 2000)
+        expect(source.binread).to eq(original)
+      end
+    end
+
+    context "when neither magick nor convert is available" do
+      let(:missing_commands) { %w[magick convert] }
+
+      it "names the missing fallback command" do
+        expect { processor.process(source, Date.new(2026, 9, 19)) }
+          .to raise_error(RuntimeError, /`convert` command was not found on PATH/)
+      end
+    end
+
+    context "when the fallback identify command is unavailable" do
+      let(:missing_commands) { %w[magick identify] }
+
+      it "reports the missing command and cleans staged conversions" do
+        expect { processor.process(source, Date.new(2026, 9, 19)) }
+          .to raise_error(RuntimeError, /`identify` command was not found on PATH/)
+        expect(config.data_dir.join("images").children).to be_empty
+      end
+    end
+
     it "creates desktop and mobile images with aspect-preserving bounds and quality 80" do
       result = processor.process(source, Date.new(2026, 9, 19))
       conversions = commands.reject { |command| command[1] == "identify" }
@@ -56,6 +95,7 @@ RSpec.describe YearInPhotos::ImageProcessor do
       original = source.binread
       failed = instance_double(Process::Status, success?: false)
       failing_runner = lambda do |*arguments|
+        expect(arguments.first).to eq("magick")
         File.write(arguments.last, "partial conversion")
         ["", "conversion failed", failed]
       end

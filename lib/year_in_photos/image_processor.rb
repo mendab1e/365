@@ -115,16 +115,30 @@ module YearInPhotos
 
     def convert(source, destination, size)
       args = [
-        "magick", *RESOURCE_LIMITS, "jpeg:#{source}[0]", "-auto-orient", "-strip",
+        *RESOURCE_LIMITS, "jpeg:#{source}[0]", "-auto-orient", "-strip",
         "-resize", "#{size}>", "-quality", QUALITY,
         "-interlace", "Plane", destination.to_s
       ]
-      run!(*args)
+      run_image_magick!("convert", *args)
     end
 
     def dimensions(path)
-      output = run!("magick", "identify", *RESOURCE_LIMITS, "-format", "%w %h", path.to_s)
+      output = run_image_magick!("identify", *RESOURCE_LIMITS, "-format", "%w %h", path.to_s)
       output.split.map { |value| Integer(value, 10) }
+    end
+
+    def run_image_magick!(operation, *)
+      command = operation == "identify" ? %w[magick identify] : ["magick"]
+      command = [operation] if @legacy_commands
+      run!(*command, *)
+    rescue Errno::ENOENT
+      if @legacy_commands
+        raise "ImageMagick is required, but the `#{operation}` command was not found on PATH " \
+              "(the `magick` command was also unavailable)"
+      end
+
+      @legacy_commands = true
+      retry
     end
 
     def run!(*)
@@ -132,8 +146,6 @@ module YearInPhotos
       return stdout if status.success?
 
       raise "ImageMagick failed: #{stderr.strip}"
-    rescue Errno::ENOENT
-      raise "ImageMagick is required, but the `magick` command was not found"
     end
   end
 end
