@@ -223,7 +223,7 @@ RSpec.describe YearInPhotos::SiteGenerator do
       expect(index).to include("© Example Author")
       expect(index).to include('href="https://github.com/mendab1e/365"')
       expect(index).to include('class="github-link"')
-      expect(index).to include("<span>365 - one photograph, every day, for a year</span>")
+      expect(index).to include("<span>365 - one photo, every day, for a year</span>")
       expect(index).to include('<svg viewBox="0 0 16 16" aria-hidden="true">')
       expect(styles).to include("footer {\n  align-items: center;")
       expect(styles).to include(".site-footer {\n    column-gap: 16px;")
