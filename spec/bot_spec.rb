@@ -188,6 +188,49 @@ RSpec.describe YearInPhotos::Bot do
       expect(telegram).not_to have_received(:send_message)
     end
 
+    it "ignores messages from a different user" do
+      update.fetch("message").fetch("from")["id"] = 8
+
+      bot.handle_update(update)
+
+      expect(processor).not_to have_received(:process)
+      expect(telegram).not_to have_received(:send_message)
+    end
+
+    it "accepts JPEG image documents" do
+      message = update.fetch("message")
+      message.delete("photo")
+      message["document"] = { "file_id" => "large", "mime_type" => "image/jpeg" }
+
+      bot.handle_update(update)
+
+      expect(processor).to have_received(:process)
+    end
+
+    it "accepts the image/jpg alias for JPEG image documents" do
+      message = update.fetch("message")
+      message.delete("photo")
+      message["document"] = { "file_id" => "large", "mime_type" => "image/jpg" }
+
+      bot.handle_update(update)
+
+      expect(processor).to have_received(:process)
+    end
+
+    it "rejects non-JPEG image documents" do
+      message = update.fetch("message")
+      message.delete("photo")
+      message["document"] = { "file_id" => "large", "mime_type" => "image/png" }
+
+      bot.handle_update(update)
+
+      expect(processor).not_to have_received(:process)
+      expect(telegram).to have_received(:send_message).with(
+        "42",
+        "Only JPEG/JPG image documents are accepted."
+      )
+    end
+
     it "dispatches a group command addressed to the bot" do
       command_update = {
         "message" => {

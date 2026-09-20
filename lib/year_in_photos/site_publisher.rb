@@ -4,13 +4,14 @@ require "fileutils"
 require "pathname"
 require "securerandom"
 require "tmpdir"
+require_relative "configuration_safety"
 
 module YearInPhotos
   class SitePublisher
     def initialize(site_dir:, data_dir:)
       @site_dir = site_dir.expand_path
-      @data_dir = data_dir
-      raise ArgumentError, "SITE_DIR cannot be a filesystem root" if @site_dir.root?
+      @data_dir = data_dir.expand_path
+      ConfigurationSafety.validate_site_dir!(site_dir: @site_dir, data_dir: @data_dir)
     end
 
     def publish

@@ -99,6 +99,9 @@ at the start because the same instance is reused by the long-running bot.
 ## Image contract
 
 - Auto-orient and strip metadata.
+- Accept JPEG/JPG input only, verify the JPEG signature, and force ImageMagick's JPEG decoder.
+- Apply ImageMagick width, height, area, memory, map, disk, file, thread, time, and list limits
+  before decoding an upload.
 - Preserve aspect ratio and never upscale (`-resize SIZE>`).
 - Desktop bounds: 2000×2000.
 - Mobile bounds: `MOBILE_IMAGE_SIZE`, default 900×1800.
@@ -146,12 +149,13 @@ at the start because the same instance is reused by the long-running bot.
 ## Bot behavior and security
 
 - `TELEGRAM_CHAT_ID` is required and is always checked.
-- `TELEGRAM_USER_ID` is optional but recommended as an additional sender restriction.
+- `TELEGRAM_USER_ID` is required as an additional sender restriction.
 - `TELEGRAM_NOTIFICATION_CHAT_ID` optionally receives a dated post URL. If the photo exists at
   22:00, the URL is sent then. If it is absent, that date is marked deferred and a later photo is
   announced at 23:59. No link is sent if the dated page still does not exist at 23:59.
 - Channel publication state is persisted, so restarts do not duplicate announcements.
-- Accepted uploads are Telegram photos and image documents.
+- Accepted uploads are Telegram photos and JPEG/JPG image documents. Other document formats are
+  rejected, and downloaded content is independently verified before decoding.
 - `/status` reports today's state and total photo count.
 - `/rebuild` regenerates the site.
 - Reminder state is persisted so process restarts do not resend the same day's reminder.
@@ -161,7 +165,7 @@ at the start because the same instance is reused by the long-running bot.
 
 See `.env.example`. Important values are:
 
-- `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, optional `TELEGRAM_USER_ID`
+- `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, `TELEGRAM_USER_ID`
 - optional `TELEGRAM_NOTIFICATION_CHAT_ID` and `TELEGRAM_CHANNEL_URL`; a public `@channelname`
   automatically derives its `https://t.me/` menu link
 - `PROJECT_TITLE`, `PROJECT_TIMEZONE`, `REMINDER_HOUR`

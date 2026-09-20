@@ -17,7 +17,7 @@ def build_config(root:, **overrides)
   defaults = {
     telegram_token: "token",
     telegram_chat_id: "42",
-    telegram_user_id: nil,
+    telegram_user_id: "7",
     notification_chat_id: nil,
     telegram_channel_url: nil,
     project_title: "365 Days",

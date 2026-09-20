@@ -19,7 +19,7 @@ contains the latest links.
 ## Setup
 
 ```sh
-cp .env.example .env
+install -m 600 .env.example .env
 # Edit .env, then load its values into the current shell.
 set -a
 . ./.env
@@ -29,9 +29,10 @@ rbenv exec bundle exec bin/rebuild
 rbenv exec bundle exec bin/365_bot
 ```
 
-The bot only accepts messages from `TELEGRAM_CHAT_ID`. Set `TELEGRAM_USER_ID` as an additional
-sender check, especially if the bot is used in a group. Send an image as either a Telegram image
-or an image document. Sending a second image on the same day replaces that day's photo.
+The bot only accepts messages from `TELEGRAM_CHAT_ID` sent by `TELEGRAM_USER_ID`. Both values are
+required. Send a JPEG as either a Telegram photo or a JPEG image document. Other document formats
+are rejected, and the downloaded file is independently verified as JPEG before ImageMagick reads
+it. Sending a second image on the same day replaces that day's photo.
 
 Set `TELEGRAM_NOTIFICATION_CHAT_ID` to a channel ID or public `@channelname` to enable daily URL
 announcements. Add the bot to that channel as an administrator with permission to post messages.
@@ -64,6 +65,9 @@ for keeping the bot running. It expects a dedicated `year-in-photos` user and gr
 paths and rbenv initialization to your server, and give the service account write access to
 `DATA_DIR`, `SITE_DIR`, and the parent directory of `SITE_DIR`. The parent is needed because a
 completed site is published by atomically replacing the previous output directory.
+Keep the production `.env` file mode `0600`; it contains the Telegram bot token. The configured
+`SITE_DIR` must be a dedicated generated-output directory and cannot contain the project or
+`DATA_DIR`.
 
 For nginx, the essential site block is:
 

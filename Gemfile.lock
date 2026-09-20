@@ -50,6 +50,7 @@ GEM
     unicode-display_width (3.2.0)
       unicode-emoji (~> 4.1)
     unicode-emoji (4.2.0)
+    zlib (3.2.3)
 
 PLATFORMS
   arm64-darwin-24
@@ -61,6 +62,7 @@ DEPENDENCIES
   rspec (~> 3.13)
   rss (~> 0.3)
   rubocop (~> 1.79)
+  zlib (>= 3.2.3)
 
 BUNDLED WITH
    2.6.9

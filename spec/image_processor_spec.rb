@@ -23,7 +23,7 @@ RSpec.describe YearInPhotos::ImageProcessor do
     end
   end
 
-  before { source.write("source") }
+  before { source.binwrite("\xFF\xD8\xFFsource".b) }
   after { FileUtils.rm_rf(root) }
 
   describe "#process" do
@@ -34,7 +34,20 @@ RSpec.describe YearInPhotos::ImageProcessor do
       expect(conversions.map { |command| command[command.index("-resize") + 1] })
         .to eq(%w[2000x2000> 900x1800>])
       expect(conversions).to all(include("-auto-orient", "-strip", "-quality", "80"))
+      expect(conversions).to all(include("-limit", "memory", "256MiB", "time", "120"))
+      sources = conversions.map do |command|
+        command.find { |argument| argument.start_with?("jpeg:") }
+      end
+      expect(sources).to all(end_with("[0]"))
       expect(result).to include(width: 1500, height: 2000)
+    end
+
+    it "rejects a non-JPEG file before invoking ImageMagick" do
+      source.binwrite("not a jpeg")
+
+      expect { processor.process(source, Date.new(2026, 9, 19)) }
+        .to raise_error(ArgumentError, "Only JPEG/JPG images are accepted")
+      expect(commands).to be_empty
     end
 
     it "restores both previous variants when publication fails" do

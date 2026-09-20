@@ -13,6 +13,7 @@ module YearInPhotos
     NOTIFICATION_HOUR = 22
     LATE_NOTIFICATION_HOUR = 23
     LATE_NOTIFICATION_MINUTE = 59
+    JPEG_MIME_TYPES = %w[image/jpeg image/jpg].freeze
 
     def initialize(config:, store:, services:, clock: Time, logger: nil)
       @config = config
@@ -76,6 +77,7 @@ module YearInPhotos
     def dispatch_message(message)
       file_id = image_file_id(message)
       return receive_photo(file_id, message_date(message)) if file_id
+      return reply("Only JPEG/JPG image documents are accepted.") if message["document"]
 
       case command_name(message)
       when "/status" then send_status
@@ -117,7 +119,7 @@ module YearInPhotos
     def receive_photo(file_id, date)
       @write_lock.synchronize do
         file_path = @telegram.file_path(file_id)
-        Tempfile.create(["telegram-photo", File.extname(file_path)]) do |source|
+        Tempfile.create("telegram-photo") do |source|
           @telegram.download(file_path, source)
           @processor.process(source.path, date) do |photo|
             @store.save_photo_with_rollback(photo) { @generator.generate! }
@@ -143,12 +145,15 @@ module YearInPhotos
       return false unless message.dig("chat", "id").to_s == @config.telegram_chat_id
 
       user_id = @config.telegram_user_id
-      user_id.nil? || message.dig("from", "id").to_s == user_id
+      return false unless user_id
+
+      message.dig("from", "id").to_s == user_id
     end
 
     def image_file_id(message)
       document = message["document"]
-      return document["file_id"] if document&.fetch("mime_type", "")&.start_with?("image/")
+      mime_type = document&.fetch("mime_type", "").to_s.downcase
+      return document["file_id"] if document && JPEG_MIME_TYPES.include?(mime_type)
 
       message.fetch("photo", []).last&.fetch("file_id", nil)
     end

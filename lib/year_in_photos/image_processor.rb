@@ -8,6 +8,19 @@ module YearInPhotos
   class ImageProcessor
     DESKTOP_SIZE = "2000x2000"
     QUALITY = "80"
+    JPEG_SIGNATURE = "\xFF\xD8\xFF".b
+    RESOURCE_LIMITS = %w[
+      -limit width 20KP
+      -limit height 20KP
+      -limit area 100MP
+      -limit memory 256MiB
+      -limit map 512MiB
+      -limit disk 1GiB
+      -limit file 64
+      -limit thread 2
+      -limit time 120
+      -limit list-length 2
+    ].freeze
 
     def initialize(config:, command_runner: Open3.method(:capture3))
       @config = config
@@ -15,6 +28,7 @@ module YearInPhotos
     end
 
     def process(source_path, date)
+      validate_jpeg!(source_path)
       destinations = destination_paths(date)
       token = "#{Process.pid}-#{SecureRandom.hex(4)}"
       staging = destinations.map { |path| staging_path(path, "uploading", token) }
@@ -28,6 +42,13 @@ module YearInPhotos
     end
 
     private
+
+    def validate_jpeg!(source_path)
+      signature = File.open(source_path, "rb") { |file| file.read(JPEG_SIGNATURE.bytesize) }
+      return if signature == JPEG_SIGNATURE
+
+      raise ArgumentError, "Only JPEG/JPG images are accepted"
+    end
 
     def destination_paths(date)
       directory = @config.data_dir.join("images")
@@ -95,7 +116,7 @@ module YearInPhotos
     def convert(source, destination, size)
       temporary = destination.sub_ext(".tmp.jpg")
       args = [
-        "magick", "#{source}[0]", "-auto-orient", "-strip",
+        "magick", *RESOURCE_LIMITS, "jpeg:#{source}[0]", "-auto-orient", "-strip",
         "-resize", "#{size}>", "-quality", QUALITY,
         "-interlace", "Plane", temporary.to_s
       ]
@@ -106,7 +127,7 @@ module YearInPhotos
     end
 
     def dimensions(path)
-      output = run!("magick", "identify", "-format", "%w %h", path.to_s)
+      output = run!("magick", "identify", *RESOURCE_LIMITS, "-format", "%w %h", path.to_s)
       output.split.map { |value| Integer(value, 10) }
     end
 

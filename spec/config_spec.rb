@@ -7,8 +7,8 @@ RSpec.describe YearInPhotos::Config do
     let(:root) { Pathname.new(Dir.mktmpdir) }
     let(:environment_keys) do
       %w[
-        PROJECT_ROOT PROJECT_TIMEZONE SITE_URL TELEGRAM_CHANNEL_URL TZ
-        TELEGRAM_NOTIFICATION_CHAT_ID
+        DATA_DIR PROJECT_ROOT PROJECT_TIMEZONE SITE_DIR SITE_URL TELEGRAM_BOT_TOKEN
+        TELEGRAM_CHANNEL_URL TELEGRAM_CHAT_ID TELEGRAM_NOTIFICATION_CHAT_ID TELEGRAM_USER_ID TZ
       ]
     end
     let(:original_environment) { ENV.to_h.slice(*environment_keys) }
@@ -56,6 +56,29 @@ RSpec.describe YearInPhotos::Config do
 
       expect { described_class.from_env(require_telegram: false) }
         .to raise_error(ArgumentError, /without a query string or fragment/)
+    end
+
+    it "requires a Telegram user ID when starting the bot" do
+      ENV["TELEGRAM_BOT_TOKEN"] = "token"
+      ENV["TELEGRAM_CHAT_ID"] = "42"
+
+      expect { described_class.from_env }
+        .to raise_error(ArgumentError, "TELEGRAM_USER_ID is required")
+    end
+
+    it "rejects the project root as the generated site directory" do
+      ENV["SITE_DIR"] = "."
+
+      expect { described_class.from_env(require_telegram: false) }
+        .to raise_error(ArgumentError, "SITE_DIR cannot contain PROJECT_ROOT")
+    end
+
+    it "rejects a generated site directory that contains the data directory" do
+      ENV["SITE_DIR"] = "output"
+      ENV["DATA_DIR"] = "output/data"
+
+      expect { described_class.from_env(require_telegram: false) }
+        .to raise_error(ArgumentError, "SITE_DIR cannot contain DATA_DIR")
     end
   end
 

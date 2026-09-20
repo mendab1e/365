@@ -2,6 +2,7 @@
 
 require "pathname"
 require "uri"
+require_relative "configuration_safety"
 
 module YearInPhotos
   Config = Data.define(
@@ -22,19 +23,22 @@ module YearInPhotos
       root = Pathname.new(ENV.fetch("PROJECT_ROOT", Dir.pwd)).expand_path
       token = ENV.fetch("TELEGRAM_BOT_TOKEN", nil)
       chat_id = ENV.fetch("TELEGRAM_CHAT_ID", nil)
-      validate_telegram!(token, chat_id) if require_telegram
+      user_id = ENV.fetch("TELEGRAM_USER_ID", nil)
+      ConfigurationSafety.validate_telegram!(token:, chat_id:, user_id:) if require_telegram
 
       timezone = ENV.fetch("PROJECT_TIMEZONE", "Europe/Berlin")
       ENV["TZ"] = timezone
 
-      new(**environment_attributes(root, token, chat_id, timezone)).tap(&:validate!)
+      new(**environment_attributes(root, token, chat_id, user_id, timezone)).tap do |config|
+        config.validate!(project_root: root)
+      end
     end
 
-    def self.environment_attributes(root, token, chat_id, timezone)
+    def self.environment_attributes(root, token, chat_id, user_id, timezone)
       {
         telegram_token: token,
         telegram_chat_id: chat_id&.to_s,
-        telegram_user_id: ENV.fetch("TELEGRAM_USER_ID", nil)&.to_s,
+        telegram_user_id: optional(user_id),
         notification_chat_id: optional(ENV.fetch("TELEGRAM_NOTIFICATION_CHAT_ID", nil)),
         telegram_channel_url: channel_url,
         project_title: ENV.fetch("PROJECT_TITLE", "365 Days"),
@@ -47,7 +51,7 @@ module YearInPhotos
       }
     end
 
-    def validate!
+    def validate!(project_root: nil)
       raise ArgumentError, "REMINDER_HOUR must be from 0 to 23" unless (0..23).cover?(reminder_hour)
 
       message = "SITE_URL must be an absolute HTTP(S) URL without a query string or fragment"
@@ -55,6 +59,8 @@ module YearInPhotos
       if telegram_channel_url && !absolute_http_url?(telegram_channel_url)
         raise ArgumentError, "TELEGRAM_CHANNEL_URL must be an absolute HTTP(S) URL"
       end
+
+      ConfigurationSafety.validate_site_dir!(site_dir:, data_dir:, project_root:)
       return if mobile_image_size.match?(/\A\d+x\d+\z/)
 
       raise ArgumentError, "MOBILE_IMAGE_SIZE must look like 900x1800"
@@ -75,11 +81,6 @@ module YearInPhotos
 
     class << self
       private
-
-      def validate_telegram!(token, chat_id)
-        raise ArgumentError, "TELEGRAM_BOT_TOKEN is required" if token.to_s.empty?
-        raise ArgumentError, "TELEGRAM_CHAT_ID is required" if chat_id.to_s.empty?
-      end
 
       def normalize_url(url)
         url.sub(%r{/+\z}, "")
