@@ -21,6 +21,7 @@ def build_config(root:, **overrides)
     notification_chat_id: nil,
     telegram_channel_url: nil,
     project_title: "365 Days",
+    project_author: "Example Author",
     timezone: "Europe/Berlin",
     reminder_hour: 21,
     site_url: "https://photos.example.test",

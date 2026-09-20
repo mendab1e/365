@@ -309,12 +309,33 @@ footer {
 }
 
 footer {
+  align-items: center;
   border-top: 1px solid var(--line);
   color: var(--muted);
+  display: flex;
   font-size: 0.78rem;
+  justify-content: space-between;
   margin-top: 90px;
   padding-bottom: 34px;
   padding-top: 24px;
+}
+
+.github-link {
+  align-items: center;
+  display: inline-flex;
+  gap: 6px;
+  text-decoration: none;
+}
+
+.github-link:hover span,
+.github-link:focus-visible span {
+  text-decoration: underline;
+}
+
+.github-link svg {
+  fill: currentcolor;
+  height: 16px;
+  width: 16px;
 }
 
 @media (max-width: 900px) {
@@ -332,6 +353,10 @@ footer {
 
   .site-header {
     padding-top: 20px;
+  }
+
+  .site-footer {
+    padding-right: 76px;
   }
 
   .primary-nav {

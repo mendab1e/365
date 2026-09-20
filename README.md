@@ -40,6 +40,7 @@ Set `TELEGRAM_NOTIFICATION_CHAT_ID` to a channel ID or public `@channelname` to 
 announcements. Add the bot to that channel as an administrator with permission to post messages.
 For public usernames, the website's `Telegram` menu link is derived automatically. Set
 `TELEGRAM_CHANNEL_URL` explicitly when the destination uses a numeric ID or an invite link.
+Set `PROJECT_AUTHOR` to the name displayed in the website footer.
 
 Available commands:
 

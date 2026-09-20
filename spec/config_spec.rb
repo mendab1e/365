@@ -7,7 +7,7 @@ RSpec.describe YearInPhotos::Config do
     let(:root) { Pathname.new(Dir.mktmpdir) }
     let(:environment_keys) do
       %w[
-        DATA_DIR PROJECT_ROOT PROJECT_TIMEZONE SITE_DIR SITE_URL TELEGRAM_BOT_TOKEN
+        DATA_DIR PROJECT_AUTHOR PROJECT_ROOT PROJECT_TIMEZONE SITE_DIR SITE_URL TELEGRAM_BOT_TOKEN
         TELEGRAM_CHANNEL_URL TELEGRAM_CHAT_ID TELEGRAM_NOTIFICATION_CHAT_ID TELEGRAM_USER_ID TZ
       ]
     end
@@ -33,6 +33,14 @@ RSpec.describe YearInPhotos::Config do
 
       expect(config.notification_chat_id).to eq("@photo_channel")
       expect(config.telegram_channel_url).to eq("https://t.me/photo_channel")
+    end
+
+    it "reads the project author used by the site footer" do
+      ENV["PROJECT_AUTHOR"] = "Ada Lovelace"
+
+      config = described_class.from_env(require_telegram: false)
+
+      expect(config.project_author).to eq("Ada Lovelace")
     end
 
     it "uses an explicit Telegram channel URL for numeric destinations" do
