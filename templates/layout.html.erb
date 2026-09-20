@@ -36,9 +36,18 @@
         <span class="nav-links">
           <button class="calendar-toggle" type="button" aria-controls="year-calendar" aria-expanded="false">Calendar</button>
           <a href="<%= public_path("about.html") %>">About</a>
-          <a href="<%= public_path("feed.xml") %>">RSS</a>
           <% if @config.telegram_channel_url %>
-            <a href="<%= h(@config.telegram_channel_url) %>">Telegram</a>
+            <a class="desktop-subscription-link" href="<%= public_path("feed.xml") %>">RSS</a>
+            <a class="desktop-subscription-link" href="<%= h(@config.telegram_channel_url) %>">Telegram</a>
+            <details class="subscribe-menu">
+              <summary>Subscribe</summary>
+              <span class="subscribe-submenu">
+                <a href="<%= public_path("feed.xml") %>">RSS</a>
+                <a href="<%= h(@config.telegram_channel_url) %>">Telegram</a>
+              </span>
+            </details>
+          <% else %>
+            <a href="<%= public_path("feed.xml") %>">RSS</a>
           <% end %>
         </span>
       </nav>

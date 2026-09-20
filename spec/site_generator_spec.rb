@@ -171,7 +171,7 @@ RSpec.describe YearInPhotos::SiteGenerator do
       expect(index).to include('aria-controls="year-calendar"')
     end
 
-    it "includes a configured Telegram channel after the RSS link" do
+    it "groups RSS and a configured Telegram channel in a mobile Subscribe menu" do
       linked_config = build_config(
         root:,
         telegram_channel_url: "https://t.me/photo_channel"
@@ -179,14 +179,25 @@ RSpec.describe YearInPhotos::SiteGenerator do
       described_class.new(config: linked_config, store:, now: -> { now }).generate!
       index = linked_config.site_dir.join("index.html").read
 
-      expect(index.index("feed.xml")).to be < index.index("https://t.me/photo_channel")
-      expect(index).to include('href="https://t.me/photo_channel">Telegram</a>')
+      expect(index).to include('<details class="subscribe-menu">')
+      expect(index).to include("<summary>Subscribe</summary>")
+      submenu = index.match(%r{<span class="subscribe-submenu">(.*?)</span>}m)[1]
+      expect(submenu.index("feed.xml")).to be < submenu.index("https://t.me/photo_channel")
+      expect(submenu).to include('href="/feed.xml">RSS</a>')
+      expect(submenu).to include('href="https://t.me/photo_channel">Telegram</a>')
+
+      styles = linked_config.site_dir.join("assets/style.css").read
+      expect(styles).to include(".desktop-subscription-link {\n    display: none;")
+      expect(styles).to include(".subscribe-menu {\n    display: block;")
+      expect(styles).to include(".subscribe-menu[open] .subscribe-submenu {\n    display: grid;")
     end
 
-    it "omits the Telegram menu item when no channel is configured" do
+    it "renders RSS directly and omits Subscribe when no Telegram channel is configured" do
       index = config.site_dir.join("index.html").read
 
+      expect(index).to include('href="/feed.xml">RSS</a>')
       expect(index).not_to include(">Telegram</a>")
+      expect(index).not_to include('class="subscribe-menu"')
     end
 
     it "includes the configured author and GitHub repository in the footer" do

@@ -77,6 +77,10 @@ footer {
   padding: 0;
 }
 
+.subscribe-menu {
+  display: none;
+}
+
 .year-calendar {
   border-bottom: 1px solid var(--line);
   display: grid;
@@ -386,6 +390,46 @@ footer {
 
   .calendar-toggle {
     display: inline;
+  }
+
+  .nav-links {
+    gap: 14px;
+  }
+
+  .desktop-subscription-link {
+    display: none;
+  }
+
+  .subscribe-menu {
+    display: block;
+    position: relative;
+  }
+
+  .subscribe-menu summary {
+    cursor: pointer;
+    list-style: none;
+  }
+
+  .subscribe-menu summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .subscribe-submenu {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    box-shadow: 0 3px 14px rgb(0 0 0 / 12%);
+    display: none;
+    gap: 12px;
+    min-width: 112px;
+    padding: 12px 14px;
+    position: absolute;
+    right: 0;
+    top: calc(100% + 10px);
+    z-index: 3;
+  }
+
+  .subscribe-menu[open] .subscribe-submenu {
+    display: grid;
   }
 
   .year-calendar {
