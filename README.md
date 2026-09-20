@@ -1,7 +1,9 @@
-# 365 Days
+# 365
 
-A Telegram bot and static-site generator for a daily photo project. Sending the bot an image
-publishes it as today's photo. At 21:00 in the configured timezone, the bot sends one reminder
+A Telegram bot and static-site generator for a 365 Project. The idea is that a
+photographer takes one photo every day and publishes it as a visual diary.
+
+Sending the bot an image publishes it as today's photo. At 21:00 in the configured timezone, the bot sends one reminder
 if the day's image is missing. An optional notification channel receives the dated page URL at
 22:00 when the photo is ready; if it is still missing then, a later photo is announced at 23:59.
 
@@ -11,12 +13,11 @@ contains the latest links.
 
 ## Requirements
 
-- Ruby 3.4.8 managed by rbenv
+- Ruby 3.4.8
 - ImageMagick 7 (`magick` on `PATH`) or ImageMagick 6 (`convert` and `identify` on `PATH`).
   The bot prefers `magick` and falls back automatically when it is unavailable. The installed
   version must support all configured resource limits, including `list-length`.
 - A Telegram bot token from BotFather
-- A static web server or static hosting provider
 
 ## Setup
 
@@ -62,7 +63,7 @@ the first upload it begins with the current month.
 
 ## Hosting
 
-Point nginx, Caddy, an object-storage static host, or any equivalent at `public/`. `SITE_URL` must
+Point nginx, at `public/`. `SITE_URL` must
 be the public root URL; subdirectory URLs are supported. The included systemd unit is an example
 for keeping the bot running. It expects a dedicated `year-in-photos` user and group. Adapt its
 paths and rbenv initialization to your server, and give the service account write access to
@@ -81,6 +82,55 @@ server {
   index index.html;
 }
 ```
+
+### systemd
+
+Install the included unit on the server, then open it to confirm that its user, group, project
+directory, and environment-file path match the deployment:
+
+```sh
+sudo install -m 0644 deploy/365-photos.service /etc/systemd/system/365-photos.service
+sudo systemctl edit --full 365-photos.service
+```
+
+The supplied unit uses `year-in-photos:year-in-photos` and `/opt/365-photos`. If the project runs
+as a different account or from another directory, update `User`, `Group`, `WorkingDirectory`, and
+`EnvironmentFile`. Ensure the selected service account can run the configured Ruby and write
+to `DATA_DIR`, `SITE_DIR`, and the parent directory of `SITE_DIR`. Keep the environment file
+private:
+
+```sh
+sudo chmod 0600 /opt/365-photos/.env
+sudo -u year-in-photos /bin/bash -lc \
+  'cd /opt/365-photos && ruby --version && bundle check'
+```
+
+For deployments below `/home`, `ProtectHome=read-only` requires an explicit writable path in the
+unit. Add the absolute project directory, which must include the site directory's parent because
+publishing creates a staging directory beside `SITE_DIR` before atomically replacing it:
+
+```ini
+[Service]
+ReadWritePaths=/absolute/path/to/365-photos
+```
+
+After adapting the paths and account, load, enable, and start the service:
+
+```sh
+sudo systemctl daemon-reload
+sudo systemctl enable --now 365-photos.service
+sudo systemctl status 365-photos.service
+```
+
+Use the journal to inspect startup failures or follow the running bot's output:
+
+```sh
+sudo journalctl -u 365-photos.service -n 100 --no-pager
+sudo journalctl -u 365-photos.service -f
+```
+
+After changing the unit, run `systemctl daemon-reload` and restart it with
+`sudo systemctl restart 365-photos.service`.
 
 ## Development
 

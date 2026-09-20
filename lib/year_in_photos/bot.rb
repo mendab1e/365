@@ -9,7 +9,7 @@ module YearInPhotos
     Services = Data.define(:generator, :processor, :telegram)
 
     POLL_RETRY_SECONDS = 5
-    REMINDER_CHECK_SECONDS = 30
+    REMINDER_CHECK_SECONDS = 60
     NOTIFICATION_HOUR = 22
     LATE_NOTIFICATION_HOUR = 23
     LATE_NOTIFICATION_MINUTE = 59

@@ -36,7 +36,7 @@ that requirement. A temporary loopback-only static server is acceptable for loca
 The entry point is `bin/365_bot`. It constructs shared services and starts two long-lived loops:
 
 1. Telegram long polling receives messages and dispatches commands or image uploads.
-2. A scheduling thread checks every 30 seconds for the missing-photo reminder and the optional
+2. A scheduling thread checks every 60 seconds for the missing-photo reminder and the optional
    22:00/23:59 notification-channel publication.
 
 The upload pipeline is:
