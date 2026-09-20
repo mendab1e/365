@@ -26,8 +26,8 @@
       <meta name="twitter:card" content="summary">
     <% end %>
     <link rel="alternate" type="application/rss+xml" title="<%= h(@config.project_title) %> RSS" href="<%= public_path("feed.xml") %>">
-    <link rel="stylesheet" href="<%= public_path("assets/style.css") %>">
-    <script defer src="<%= public_path("assets/site.js") %>"></script>
+    <link rel="stylesheet" href="<%= asset_path("style.css") %>">
+    <script defer src="<%= asset_path("site.js") %>"></script>
   </head>
   <body>
     <header class="site-header">

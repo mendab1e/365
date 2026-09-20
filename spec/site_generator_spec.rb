@@ -108,6 +108,16 @@ RSpec.describe YearInPhotos::SiteGenerator do
       expect(config.site_dir.join("assets/site.js")).to exist
     end
 
+    it "versions browser assets with content hashes" do
+      index = config.site_dir.join("index.html").read
+      template_assets = Pathname.new(__dir__).join("../templates/assets").expand_path
+      style_version = Digest::SHA256.file(template_assets.join("style.css")).hexdigest[0, 12]
+      script_version = Digest::SHA256.file(template_assets.join("site.js")).hexdigest[0, 12]
+
+      expect(index).to include(%(href="/assets/style.css?v=#{style_version}"))
+      expect(index).to include(%(src="/assets/site.js?v=#{script_version}"))
+    end
+
     it "renders usable fallback and dated-page pictures without deferred loading" do
       index = config.site_dir.join("index.html").read
       fallback = index.match(%r{<noscript>(.*?)</noscript>}m)[1]

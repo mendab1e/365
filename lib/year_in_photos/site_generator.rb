@@ -6,9 +6,12 @@ require "erb"
 require "fileutils"
 require "rss"
 require "time"
+require_relative "versioned_asset_paths"
 
 module YearInPhotos
   class SiteGenerator
+    include VersionedAssetPaths
+
     TEMPLATE_DIR = Pathname.new(__dir__).join("../../templates").expand_path
     AI_CRAWLERS = %w[
       AI2Bot Amazonbot Applebot-Extended Bytespider CCBot ChatGPT-User ClaudeBot
