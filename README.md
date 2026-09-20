@@ -138,3 +138,7 @@ After changing the unit, run `systemctl daemon-reload` and restart it with
 rbenv exec bundle exec rspec
 rbenv exec bundle exec rubocop
 ```
+
+## License
+
+This project is available under the [MIT License](LICENSE).
