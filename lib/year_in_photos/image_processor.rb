@@ -9,6 +9,8 @@ module YearInPhotos
     DESKTOP_SIZE = "2000x2000"
     QUALITY = "80"
     JPEG_SIGNATURE = "\xFF\xD8\xFF".b
+    HEIC_BRANDS = %w[heic heix hevc hevx heim heis hevm hevs].freeze
+    MAX_FILE_TYPE_BOX_SIZE = 4096
     RESOURCE_LIMITS = %w[
       -limit width 20KP
       -limit height 20KP
@@ -28,11 +30,11 @@ module YearInPhotos
     end
 
     def process(source_path, date)
-      validate_jpeg!(source_path)
+      format = source_format(source_path)
       destinations = destination_paths(date)
       token = "#{Process.pid}-#{SecureRandom.hex(4)}"
       staging = destinations.map { |path| staging_path(path, "uploading", token) }
-      create_variants(source_path, staging)
+      create_variants(source_path, staging, format)
       photo = photo_metadata(date, destinations, dimensions(staging.first))
       replacements = staging.zip(destinations)
       commit_replacement(replacements, token) { yield(photo) if block_given? }
@@ -43,11 +45,23 @@ module YearInPhotos
 
     private
 
-    def validate_jpeg!(source_path)
-      signature = File.open(source_path, "rb") { |file| file.read(JPEG_SIGNATURE.bytesize) }
-      return if signature == JPEG_SIGNATURE
+    def source_format(source_path)
+      header = File.open(source_path, "rb") { |file| file.read(MAX_FILE_TYPE_BOX_SIZE) }
+      return "jpeg" if header.start_with?(JPEG_SIGNATURE)
+      return "heic" if heic_container?(header)
 
-      raise ArgumentError, "Only JPEG/JPG images are accepted"
+      raise ArgumentError, "Only JPEG/JPG and HEIC images are accepted"
+    end
+
+    def heic_container?(header)
+      return false unless header.bytesize >= 16 && header.byteslice(4, 4) == "ftyp"
+
+      box_size = header.byteslice(0, 4).unpack1("N")
+      return false unless box_size.between?(16, header.bytesize) && ((box_size - 16) % 4).zero?
+
+      brands = [header.byteslice(8, 4)]
+      (16...box_size).step(4) { |offset| brands << header.byteslice(offset, 4) }
+      brands.intersect?(HEIC_BRANDS)
     end
 
     def destination_paths(date)
@@ -55,10 +69,10 @@ module YearInPhotos
       [directory.join("#{date.iso8601}.jpg"), directory.join("#{date.iso8601}-mobile.jpg")]
     end
 
-    def create_variants(source_path, staging)
+    def create_variants(source_path, staging, format)
       FileUtils.mkdir_p(staging.first.dirname)
-      convert(source_path, staging.first, DESKTOP_SIZE)
-      convert(source_path, staging.last, @config.mobile_image_size)
+      convert(source_path, staging.first, DESKTOP_SIZE, format)
+      convert(source_path, staging.last, @config.mobile_image_size, format)
     end
 
     def photo_metadata(date, destinations, dimensions)
@@ -113,9 +127,9 @@ module YearInPhotos
       destination.dirname.join(".#{basename}.#{purpose}-#{token}#{destination.extname}")
     end
 
-    def convert(source, destination, size)
+    def convert(source, destination, size, format)
       args = [
-        *RESOURCE_LIMITS, "jpeg:#{source}[0]", "-auto-orient", "-strip",
+        *RESOURCE_LIMITS, "#{format}:#{source}[0]", "-auto-orient", "-strip",
         "-resize", "#{size}>", "-quality", QUALITY,
         "-interlace", "Plane", destination.to_s
       ]

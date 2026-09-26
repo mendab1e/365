@@ -13,7 +13,7 @@ module YearInPhotos
     NOTIFICATION_HOUR = 22
     LATE_NOTIFICATION_HOUR = 23
     LATE_NOTIFICATION_MINUTE = 59
-    JPEG_MIME_TYPES = %w[image/jpeg image/jpg].freeze
+    IMAGE_MIME_TYPES = %w[image/jpeg image/jpg image/heic image/heif].freeze
 
     def initialize(config:, store:, services:, clock: Time, logger: nil)
       @config = config
@@ -77,7 +77,7 @@ module YearInPhotos
     def dispatch_message(message)
       file_id = image_file_id(message)
       return receive_photo(file_id, message_date(message)) if file_id
-      return reply("Only JPEG/JPG image documents are accepted.") if message["document"]
+      return reply("Only JPEG/JPG and HEIC image documents are accepted.") if message["document"]
 
       case command_name(message)
       when "/status" then send_status
@@ -153,7 +153,7 @@ module YearInPhotos
     def image_file_id(message)
       document = message["document"]
       mime_type = document&.fetch("mime_type", "").to_s.downcase
-      return document["file_id"] if document && JPEG_MIME_TYPES.include?(mime_type)
+      return document["file_id"] if document && IMAGE_MIME_TYPES.include?(mime_type)
 
       message.fetch("photo", []).last&.fetch("file_id", nil)
     end

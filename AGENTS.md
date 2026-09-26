@@ -100,7 +100,8 @@ at the start because the same instance is reused by the long-running bot.
 ## Image contract
 
 - Auto-orient and strip metadata.
-- Accept JPEG/JPG input only, verify the JPEG signature, and force ImageMagick's JPEG decoder.
+- Accept JPEG/JPG and HEIC input, verify the JPEG signature or HEIC file-type brands, and force
+  ImageMagick's matching decoder. HEIC requires ImageMagick HEIC read support.
 - Apply ImageMagick width, height, area, memory, map, disk, file, thread, time, and list limits
   before decoding an upload.
 - Preserve aspect ratio and never upscale (`-resize SIZE>`).
@@ -155,8 +156,8 @@ at the start because the same instance is reused by the long-running bot.
   22:00, the URL is sent then. If it is absent, that date is marked deferred and a later photo is
   announced at 23:59. No link is sent if the dated page still does not exist at 23:59.
 - Channel publication state is persisted, so restarts do not duplicate announcements.
-- Accepted uploads are Telegram photos and JPEG/JPG image documents. Other document formats are
-  rejected, and downloaded content is independently verified before decoding.
+- Accepted uploads are Telegram photos and JPEG/JPG or HEIC image documents. Other document formats
+  are rejected, and downloaded content is independently verified before decoding.
 - `/status` reports today's state and total photo count.
 - `/rebuild` regenerates the site.
 - Reminder state is persisted so process restarts do not resend the same day's reminder.

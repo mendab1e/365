@@ -63,7 +63,7 @@ module YearInPhotos
         title: @config.project_title,
         description: "A daily photo project.",
         path: "",
-        social_photo: photos.first
+        social_photo: photos.last
       )
     end
 
@@ -73,7 +73,7 @@ module YearInPhotos
         title: "About — #{@config.project_title}",
         description: "About #{@config.project_title}.",
         path: "about.html",
-        social_photo: photos.first
+        social_photo: nil
       )
     end
 

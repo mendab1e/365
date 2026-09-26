@@ -76,10 +76,12 @@
     </header>
 
     <main><%= @content %></main>
-    <dialog class="lightbox" aria-label="Full-screen photo viewer">
-      <button class="lightbox-close" type="button" aria-label="Close full-screen photo">×</button>
-      <img class="lightbox-image" alt="">
-    </dialog>
+    <% if @social_photo %>
+      <dialog class="lightbox" aria-label="Full-screen photo viewer">
+        <button class="lightbox-close" type="button" aria-label="Close full-screen photo">×</button>
+        <img class="lightbox-image" alt="">
+      </dialog>
+    <% end %>
     <footer class="site-footer">
       <a class="github-link" href="https://github.com/mendab1e/365" aria-label="365 on GitHub">
         <svg viewBox="0 0 16 16" aria-hidden="true">

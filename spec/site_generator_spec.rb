@@ -263,10 +263,9 @@ RSpec.describe YearInPhotos::SiteGenerator do
       expect(feed).to include("https://photos.example.test/images/2026-09-19.jpg")
     end
 
-    it "publishes image-rich social metadata and canonical URLs on every HTML page" do
+    it "publishes image-rich social metadata for the index and posts" do
       pages = [
         config.site_dir.join("index.html"),
-        config.site_dir.join("about.html"),
         config.site_dir.join("posts/2026-09-19.html")
       ].map(&:read)
 
@@ -278,17 +277,24 @@ RSpec.describe YearInPhotos::SiteGenerator do
       )
     end
 
-    it "uses the oldest photo as the index social cover" do
+    it "uses the latest photo as the index social cover after a rebuild" do
       save_photo("2026-09-20")
       generator.generate!
       index = config.site_dir.join("index.html").read
 
       expect(index).to include(
-        'property="og:image" content="https://photos.example.test/images/2026-09-19.jpg"'
-      )
-      expect(index).not_to include(
         'property="og:image" content="https://photos.example.test/images/2026-09-20.jpg"'
       )
+      expect(index).to include(
+        'name="twitter:image" content="https://photos.example.test/images/2026-09-20.jpg"'
+      )
+    end
+
+    it "keeps the About page text-only, including its social card" do
+      about = config.site_dir.join("about.html").read
+
+      expect(about).not_to include("<img", 'property="og:image"', 'name="twitter:image"')
+      expect(about).to include('name="twitter:card" content="summary"')
     end
 
     it "lists public pages and full-resolution photos in the sitemap" do

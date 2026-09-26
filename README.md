@@ -17,6 +17,7 @@ contains the latest links.
 - ImageMagick 7 (`magick` on `PATH`) or ImageMagick 6 (`convert` and `identify` on `PATH`).
   The bot prefers `magick` and falls back automatically when it is unavailable. The installed
   version must support all configured resource limits, including `list-length`.
+  HEIC uploads also require ImageMagick HEIC read support (typically via libheif).
 - A Telegram bot token from BotFather
 
 ## Setup
@@ -33,9 +34,10 @@ bundle exec bin/365_bot
 ```
 
 The bot only accepts messages from `TELEGRAM_CHAT_ID` sent by `TELEGRAM_USER_ID`. Both values are
-required. Send a JPEG as either a Telegram photo or a JPEG image document. Other document formats
-are rejected, and the downloaded file is independently verified as JPEG before ImageMagick reads
-it. Sending a second image on the same day replaces that day's photo.
+required. Send a JPEG as either a Telegram photo or a JPEG image document, or send a HEIC file as
+an image document. Other document formats are rejected, and the downloaded file is independently
+checked as JPEG or HEIC before ImageMagick reads it. Sending a second image on the same day replaces
+that day's photo.
 
 Set `TELEGRAM_NOTIFICATION_CHAT_ID` to a channel ID or public `@channelname` to enable daily URL
 announcements. Add the bot to that channel as an administrator with permission to post messages.
@@ -53,8 +55,9 @@ Available commands:
 Processed source-of-truth images and JSON metadata are stored under `data/`. The generated site
 is written to `public/`; both are ignored by Git. Back up `data/`.
 
-ImageMagick auto-orients and strips metadata from incoming images. The desktop variant fits inside
-2000×2000 and the mobile variant fits inside 900×1800. Both retain aspect ratio and use quality
+ImageMagick auto-orients and strips metadata from incoming images. HEIC inputs are converted to JPEG
+for both published variants. The desktop variant fits inside 2000×2000 and the mobile variant fits
+inside 900×1800. Both retain aspect ratio and use quality
 80. For example, a 3000×4000 image becomes 1500×2000. The downloaded original is a temporary file
 and is deleted immediately after processing.
 

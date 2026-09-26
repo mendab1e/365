@@ -217,7 +217,27 @@ RSpec.describe YearInPhotos::Bot do
       expect(processor).to have_received(:process)
     end
 
-    it "rejects non-JPEG image documents" do
+    it "accepts HEIC image documents" do
+      message = update.fetch("message")
+      message.delete("photo")
+      message["document"] = { "file_id" => "large", "mime_type" => "image/heic" }
+
+      bot.handle_update(update)
+
+      expect(processor).to have_received(:process)
+    end
+
+    it "accepts HEIF image documents containing HEIC images" do
+      message = update.fetch("message")
+      message.delete("photo")
+      message["document"] = { "file_id" => "large", "mime_type" => "image/heif" }
+
+      bot.handle_update(update)
+
+      expect(processor).to have_received(:process)
+    end
+
+    it "rejects other image documents" do
       message = update.fetch("message")
       message.delete("photo")
       message["document"] = { "file_id" => "large", "mime_type" => "image/png" }
@@ -227,7 +247,7 @@ RSpec.describe YearInPhotos::Bot do
       expect(processor).not_to have_received(:process)
       expect(telegram).to have_received(:send_message).with(
         "42",
-        "Only JPEG/JPG image documents are accepted."
+        "Only JPEG/JPG and HEIC image documents are accepted."
       )
     end
 

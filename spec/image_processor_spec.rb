@@ -81,11 +81,40 @@ RSpec.describe YearInPhotos::ImageProcessor do
       expect(result).to include(width: 1500, height: 2000)
     end
 
-    it "rejects a non-JPEG file before invoking ImageMagick" do
+    it "converts HEIC input with the HEIC decoder while keeping JPEG output paths" do
+      source.binwrite("#{[20].pack('N')}ftypmif1\0\0\0\0heic")
+
+      result = processor.process(source, Date.new(2026, 9, 19))
+      conversions = commands.reject { |command| command[1] == "identify" }
+
+      sources = conversions.map do |command|
+        command.find { |argument| argument.start_with?("heic:") }
+      end
+      expect(sources).to all(end_with("[0]"))
+      expect(result).to include(
+        image: "images/2026-09-19.jpg",
+        mobile_image: "images/2026-09-19-mobile.jpg"
+      )
+    end
+
+    it "rejects a file without a JPEG or HEIC signature before invoking ImageMagick" do
       source.binwrite("not a jpeg")
 
       expect { processor.process(source, Date.new(2026, 9, 19)) }
-        .to raise_error(ArgumentError, "Only JPEG/JPG images are accepted")
+        .to raise_error(ArgumentError, "Only JPEG/JPG and HEIC images are accepted")
+      expect(commands).to be_empty
+    end
+
+    it "rejects an unrelated or malformed ISO media container" do
+      [
+        "#{[20].pack('N')}ftypavif\0\0\0\0mif1",
+        "#{[28].pack('N')}ftypheic\0\0\0\0mif1"
+      ].each do |contents|
+        source.binwrite(contents)
+
+        expect { processor.process(source, Date.new(2026, 9, 19)) }
+          .to raise_error(ArgumentError, "Only JPEG/JPG and HEIC images are accepted")
+      end
       expect(commands).to be_empty
     end
 
