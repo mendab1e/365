@@ -130,8 +130,10 @@ at the start because the same instance is reused by the long-running bot.
 - Feed images are constrained by viewport height so a portrait photo fits within a desktop screen;
   width remains automatic to preserve aspect ratio.
 - Clicking a feed photo opens the largest processed image in a full-screen modal with the white
-  frame preserved. Clicking the feed date title opens that photo's permanent dated page. The
-  full-screen viewer closes from its close button, backdrop, or Escape key.
+  frame preserved. The viewer has previous/next buttons and Left/Right keyboard navigation in
+  feed order, wrapping at the ends, plus a weekday-and-date caption beneath the photo. Clicking
+  the feed date title opens that photo's permanent dated page. The full-screen viewer closes from
+  its close button, backdrop, or Escape key.
 - The index has a fixed circular `^` back-to-top button. It remains hidden until the page has
   scrolled beyond the calendar (or the collapsed header on mobile), then scrolls smoothly to the
   top while respecting reduced-motion preferences.

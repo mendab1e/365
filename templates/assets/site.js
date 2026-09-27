@@ -70,15 +70,44 @@
   const lightbox = document.querySelector(".lightbox");
   const lightboxImage = lightbox?.querySelector(".lightbox-image");
   const closeButton = lightbox?.querySelector(".lightbox-close");
+  const previousButton = lightbox?.querySelector(".lightbox-previous");
+  const nextButton = lightbox?.querySelector(".lightbox-next");
+  const caption = lightbox?.querySelector(".lightbox-caption");
 
-  if (lightbox && lightboxImage && "showModal" in lightbox) {
-    document.querySelectorAll(".lightbox-trigger").forEach((trigger) => {
+  if (lightbox && lightboxImage && previousButton && nextButton && caption && "showModal" in lightbox) {
+    const triggers = Array.from(document.querySelectorAll(".lightbox-trigger"));
+    let currentIndex = 0;
+
+    const showPhoto = (index) => {
+      currentIndex = (index + triggers.length) % triggers.length;
+      const trigger = triggers[currentIndex];
+      lightboxImage.src = trigger.href;
+      lightboxImage.alt = trigger.dataset.lightboxAlt;
+      caption.textContent = trigger.dataset.lightboxTitle;
+    };
+
+    previousButton.hidden = triggers.length < 2;
+    nextButton.hidden = triggers.length < 2;
+
+    triggers.forEach((trigger, index) => {
       trigger.addEventListener("click", (event) => {
         event.preventDefault();
-        lightboxImage.src = trigger.href;
-        lightboxImage.alt = trigger.dataset.lightboxAlt;
+        showPhoto(index);
         lightbox.showModal();
       });
+    });
+
+    previousButton.addEventListener("click", () => showPhoto(currentIndex - 1));
+    nextButton.addEventListener("click", () => showPhoto(currentIndex + 1));
+    lightbox.addEventListener("keydown", (event) => {
+      if (triggers.length < 2) return;
+      if (event.key === "ArrowLeft") {
+        event.preventDefault();
+        showPhoto(currentIndex - 1);
+      } else if (event.key === "ArrowRight") {
+        event.preventDefault();
+        showPhoto(currentIndex + 1);
+      }
     });
 
     closeButton.addEventListener("click", () => lightbox.close());

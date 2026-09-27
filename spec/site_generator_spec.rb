@@ -161,6 +161,25 @@ RSpec.describe YearInPhotos::SiteGenerator do
       expect(index).to include('class="lightbox-image"')
     end
 
+    it "provides dated photos and viewer navigation in feed order" do
+      save_photo("2026-09-20")
+      generator.generate!
+      index = config.site_dir.join("index.html").read
+      post = config.site_dir.join("posts/2026-09-20.html").read
+
+      expect(index.scan(/data-lightbox-title="([^"]+)"/).flatten).to eq(
+        ["Sunday, September 20, 2026", "Saturday, September 19, 2026"]
+      )
+      expect(index).to include(
+        'class="lightbox-nav lightbox-previous" type="button" aria-label="Previous photo"'
+      )
+      expect(index).to include(
+        'class="lightbox-nav lightbox-next" type="button" aria-label="Next photo"'
+      )
+      expect(index).to include('class="lightbox-caption" aria-live="polite"')
+      expect(post).to include('data-lightbox-title="Sunday, September 20, 2026"')
+    end
+
     it "adds an index-only back-to-top control" do
       index = config.site_dir.join("index.html").read
       about = config.site_dir.join("about.html").read
