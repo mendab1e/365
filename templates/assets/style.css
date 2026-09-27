@@ -546,16 +546,29 @@ footer {
   }
 
   .lightbox-nav {
-    height: 36px;
-    width: 36px;
+    background: transparent;
+    border-radius: 0;
+    bottom: 40px;
+    color: transparent;
+    font-size: 0;
+    height: auto;
+    padding: 0;
+    top: 56px;
+    transform: none;
+    width: clamp(56px, 18vw, 72px);
+  }
+
+  .lightbox-nav:focus-visible {
+    outline: 2px solid white;
+    outline-offset: -4px;
   }
 
   .lightbox-previous {
-    left: 8px;
+    left: 0;
   }
 
   .lightbox-next {
-    right: 8px;
+    right: 0;
   }
 
   .back-to-top {
