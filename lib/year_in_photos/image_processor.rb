@@ -134,6 +134,12 @@ module YearInPhotos
         "-interlace", "Plane", destination.to_s
       ]
       run_image_magick!("convert", *args)
+    rescue RuntimeError => e
+      decoder_missing = e.message.match?(/Unsupported codec|No decoding plugin installed/i)
+      raise unless format == "heic" && decoder_missing
+
+      raise "This server cannot decode HEIC images. Install or enable the libheif HEVC " \
+            "decoder (libde265) for ImageMagick, or send a JPEG instead."
     end
 
     def dimensions(path)

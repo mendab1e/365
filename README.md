@@ -17,8 +17,23 @@ contains the latest links.
 - ImageMagick 7 (`magick` on `PATH`) or ImageMagick 6 (`convert` and `identify` on `PATH`).
   The bot prefers `magick` and falls back automatically when it is unavailable. The installed
   version must support all configured resource limits, including `list-length`.
-  HEIC uploads also require ImageMagick HEIC read support (typically via libheif).
+  HEIC uploads also require ImageMagick HEIC read support via libheif and an HEVC decoder such as
+  libde265. A listed HEIC format alone does not prove that an actual photo can be decoded.
 - A Telegram bot token from BotFather
+
+If a HEIC upload reports `Unsupported codec`, check the ImageMagick installation **on the bot
+server**. On Ubuntu 24.04 and Debian 13, install the distribution's
+`libheif-plugin-libde265` package. On Debian 12, `libheif1` depends on `libde265-0` unless a
+different libheif build is in use. Then retry the same upload. To test decoding with a sample HEIC
+file, run the appropriate command as the bot's service account:
+
+```sh
+magick 'heic:sample.heic[0]' -format '%w %h' info:   # ImageMagick 7
+convert 'heic:sample.heic[0]' -format '%w %h' info:  # ImageMagick 6
+```
+
+Use a JPEG upload until the server can decode HEIC. The failed upload does not replace an existing
+published image.
 
 ## Setup
 

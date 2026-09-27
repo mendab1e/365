@@ -97,6 +97,27 @@ RSpec.describe YearInPhotos::ImageProcessor do
       )
     end
 
+    context "when the server lacks a HEIC decoder" do
+      before { source.binwrite("#{[20].pack('N')}ftypmif1\0\0\0\0heic") }
+
+      let(:failed) { instance_double(Process::Status, success?: false) }
+      let(:command_runner) do
+        lambda do |*arguments|
+          commands << arguments
+          ["", "convert-im6.q16: Unsupported feature: Unsupported codec (4.3000)", failed]
+        end
+      end
+
+      it "explains the missing server dependency and preserves the source" do
+        original = source.binread
+
+        expect { processor.process(source, Date.new(2026, 9, 19)) }
+          .to raise_error(RuntimeError, /Install or enable the libheif HEVC decoder \(libde265\)/)
+        expect(config.data_dir.join("images").children).to be_empty
+        expect(source.binread).to eq(original)
+      end
+    end
+
     it "rejects a file without a JPEG or HEIC signature before invoking ImageMagick" do
       source.binwrite("not a jpeg")
 
