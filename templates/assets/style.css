@@ -204,11 +204,6 @@ footer {
   width: auto;
 }
 
-.photo-post img.portrait-photo {
-  height: min(calc(100vh - 120px), 2000px);
-  height: min(calc(100svh - 120px), 2000px);
-}
-
 .lazy-image {
   opacity: 0;
   transition: opacity 180ms ease-out;
