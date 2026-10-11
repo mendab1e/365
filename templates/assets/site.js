@@ -86,6 +86,7 @@
       const frameWidth = parseFloat(styles.borderLeftWidth) + parseFloat(styles.borderRightWidth);
       const frameHeight = parseFloat(styles.borderTopWidth) + parseFloat(styles.borderBottomWidth);
       const scale = Math.min(
+        1,
         (lightboxStage.clientWidth - frameWidth) / lightboxImage.naturalWidth,
         (lightboxStage.clientHeight - frameHeight) / lightboxImage.naturalHeight
       );
