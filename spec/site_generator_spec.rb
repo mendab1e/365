@@ -265,6 +265,17 @@ RSpec.describe YearInPhotos::SiteGenerator do
       expect(styles).to include("width: 18px;")
     end
 
+    it "keeps dense calendars within their month columns on mobile" do
+      styles = config.site_dir.join("assets/style.css").read
+
+      expect(styles).to include("grid-template-columns: repeat(7, minmax(0, 1fr));")
+      expect(styles).to include("max-width: calc(100% - 2px);")
+      expect(styles).to include(
+        "@media (max-width: 560px) {\n  .year-calendar {\n    " \
+        "grid-template-columns: repeat(2, minmax(0, 1fr));"
+      )
+    end
+
     it "folds next year's matching month into a red calendar layer" do
       save_photo("2027-09-17")
       generator.generate!
