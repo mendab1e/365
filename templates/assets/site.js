@@ -69,14 +69,35 @@
 
   const lightbox = document.querySelector(".lightbox");
   const lightboxImage = lightbox?.querySelector(".lightbox-image");
+  const lightboxStage = lightbox?.querySelector(".lightbox-stage");
   const closeButton = lightbox?.querySelector(".lightbox-close");
   const previousButton = lightbox?.querySelector(".lightbox-previous");
   const nextButton = lightbox?.querySelector(".lightbox-next");
   const caption = lightbox?.querySelector(".lightbox-caption");
 
-  if (lightbox && lightboxImage && previousButton && nextButton && caption && "showModal" in lightbox) {
+  if (lightbox && lightboxImage && lightboxStage && closeButton && previousButton && nextButton && caption && "showModal" in lightbox) {
     const triggers = Array.from(document.querySelectorAll(".lightbox-trigger"));
     let currentIndex = 0;
+
+    const fitPhoto = () => {
+      if (!lightbox.open || !lightboxImage.complete || !lightboxImage.naturalWidth) return;
+
+      const styles = getComputedStyle(lightboxImage);
+      const frameWidth = parseFloat(styles.borderLeftWidth) + parseFloat(styles.borderRightWidth);
+      const frameHeight = parseFloat(styles.borderTopWidth) + parseFloat(styles.borderBottomWidth);
+      const scale = Math.min(
+        (lightboxStage.clientWidth - frameWidth) / lightboxImage.naturalWidth,
+        (lightboxStage.clientHeight - frameHeight) / lightboxImage.naturalHeight
+      );
+      if (scale <= 0) return;
+
+      lightboxImage.style.width = `${lightboxImage.naturalWidth * scale + frameWidth}px`;
+      lightboxImage.style.height = `${lightboxImage.naturalHeight * scale + frameHeight}px`;
+    };
+
+    lightboxImage.addEventListener("load", fitPhoto);
+    window.addEventListener("resize", fitPhoto);
+    if ("ResizeObserver" in window) new ResizeObserver(fitPhoto).observe(lightboxStage);
 
     const showPhoto = (index) => {
       currentIndex = (index + triggers.length) % triggers.length;
@@ -84,6 +105,7 @@
       lightboxImage.src = trigger.href;
       lightboxImage.alt = trigger.dataset.lightboxAlt;
       caption.textContent = trigger.dataset.lightboxTitle;
+      fitPhoto();
     };
 
     previousButton.hidden = triggers.length < 2;
@@ -94,6 +116,7 @@
         event.preventDefault();
         showPhoto(index);
         lightbox.showModal();
+        fitPhoto();
       });
     });
 

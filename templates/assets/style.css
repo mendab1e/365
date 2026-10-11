@@ -242,7 +242,7 @@ footer {
 .lightbox-stage {
   align-items: center;
   display: flex;
-  flex: 1 1 auto;
+  flex: 1 1 0;
   justify-content: center;
   min-height: 0;
 }

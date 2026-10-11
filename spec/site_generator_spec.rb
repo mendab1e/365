@@ -161,6 +161,19 @@ RSpec.describe YearInPhotos::SiteGenerator do
       expect(index).to include('class="lightbox-image"')
     end
 
+    it "sizes the full-screen photo independently of its natural size and the feed" do
+      styles = config.site_dir.join("assets/style.css").read
+      script = config.site_dir.join("assets/site.js").read
+
+      expect(styles).to include("flex: 1 1 0;")
+      expect(script).to include('lightboxImage.addEventListener("load", fitPhoto);')
+      expect(script).to include('window.addEventListener("resize", fitPhoto);')
+      expect(script).to include("new ResizeObserver(fitPhoto).observe(lightboxStage)")
+      expect(script).to include("lightboxStage.clientWidth - frameWidth")
+      expect(script).to include("lightboxStage.clientHeight - frameHeight")
+      expect(script).to include("lightbox.showModal();\n        fitPhoto();")
+    end
+
     it "provides dated photos and viewer navigation in feed order" do
       save_photo("2026-09-20")
       generator.generate!
