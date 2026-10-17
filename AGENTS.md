@@ -163,6 +163,9 @@ at the start because the same instance is reused by the long-running bot.
   are rejected, and downloaded content is independently verified before decoding.
 - `/status` reports today's state and total photo count.
 - `/rebuild` regenerates the site.
+- `/yesterday` selects the day before the command's Telegram timestamp in the project timezone
+  for the next successful upload, replacing any existing photo. The selected date remains fixed
+  across midnight and failed uploads, and clears after success, `/cancel`, or a bot restart.
 - Reminder state is persisted so process restarts do not resend the same day's reminder.
 - Network and processing failures are logged and polling retries after five seconds.
 

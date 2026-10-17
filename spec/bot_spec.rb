@@ -126,9 +126,10 @@ RSpec.describe YearInPhotos::Bot do
     let(:sent_time) { Time.new(2026, 9, 19, 23, 59, 59, "+02:00") }
     let(:current_time) { Time.new(2026, 9, 20, 0, 0, 1, "+02:00") }
     let(:timestamp) { sent_time.to_i }
+    let(:upload_date) { sent_time.to_date }
     let(:photo) do
       {
-        date: sent_time.to_date.iso8601,
+        date: upload_date.iso8601,
         image: "images/2026-09-19.jpg",
         mobile_image: "images/2026-09-19-mobile.jpg",
         width: 1500,
@@ -154,7 +155,7 @@ RSpec.describe YearInPhotos::Bot do
         destination.rewind
       end
       allow(processor).to receive(:process) do |_path, date, &publication|
-        expect(date).to eq(sent_time.to_date)
+        expect(date).to eq(upload_date)
         publication.call(photo)
         photo
       end
@@ -264,6 +265,113 @@ RSpec.describe YearInPhotos::Bot do
       bot.handle_update(command_update)
 
       expect(telegram).to have_received(:send_message).with("42", /still missing/)
+    end
+
+    context "when /yesterday selects a replacement date" do
+      let(:sent_time) { Time.new(2027, 1, 1, 23, 59, 59, "+01:00") }
+      let(:current_time) { Time.new(2027, 1, 2, 0, 0, 1, "+01:00") }
+      let(:upload_date) { Date.new(2026, 12, 31) }
+      let(:command_update) do
+        { "message" => update.fetch("message").except("photo").merge(
+          "text" => "/yesterday@photo_bot"
+        ) }
+      end
+
+      it "confirms the date using the command timestamp across midnight and a year boundary" do
+        bot.handle_update(command_update)
+
+        expect(telegram).to have_received(:send_message).with(
+          "42", %r{December 31, 2026.*replace.*/cancel}
+        )
+      end
+
+      it "replaces yesterday's metadata while preserving today's photo" do
+        store.save_photo(photo.merge(width: 1000))
+        today = photo.merge(date: sent_time.to_date.iso8601)
+        store.save_photo(today)
+        bot.handle_update(command_update)
+
+        bot.handle_update(update)
+
+        expect(store.photo_on(upload_date)).to eq(photo)
+        expect(store.photo_on(sent_time.to_date)).to eq(today)
+        expect(store.photos.length).to eq(2)
+        expect(generator).to have_received(:generate!).once
+        expect(telegram).to have_received(:send_message).with("42", "Published December 31, 2026 ✓")
+      end
+
+      it "keeps the confirmed date when the next photo is sent after midnight" do
+        bot.handle_update(command_update)
+        update.fetch("message")["date"] = current_time.to_i
+        allow(clock).to receive(:at).with(current_time.to_i).and_return(current_time)
+
+        bot.handle_update(update)
+
+        expect(store.photo_on(upload_date)).to eq(photo)
+      end
+
+      it "returns to the normal message date after one successful replacement" do
+        bot.handle_update(command_update)
+        bot.handle_update(update)
+        today = photo.merge(date: sent_time.to_date.iso8601)
+        allow(processor).to receive(:process).with(anything, sent_time.to_date).and_yield(today)
+
+        bot.handle_update(update)
+
+        expect(store.photo_on(upload_date)).to eq(photo)
+        expect(store.photo_on(sent_time.to_date)).to eq(today)
+      end
+
+      it "keeps the selected date for retry when publication fails" do
+        previous = photo.merge(width: 1000)
+        store.save_photo(previous)
+        bot.handle_update(command_update)
+        allow(generator).to receive(:generate!).and_raise("template failure")
+
+        bot.handle_update(update)
+
+        expect(store.photo_on(upload_date)).to eq(previous)
+        allow(generator).to receive(:generate!).and_return(true)
+        bot.handle_update(update)
+
+        expect(store.photo_on(upload_date)).to eq(photo)
+      end
+
+      it "keeps the selected date after a status command and an unsupported document" do
+        bot.handle_update(command_update)
+        bot.handle_update("message" => command_update.fetch("message").merge("text" => "/status"))
+        bot.handle_update("message" => command_update.fetch("message").except("text").merge(
+          "document" => { "file_id" => "large", "mime_type" => "image/png" }
+        ))
+
+        bot.handle_update(update)
+
+        expect(store.photo_on(upload_date)).to eq(photo)
+      end
+
+      it "returns to the normal message date when cancelled" do
+        bot.handle_update(command_update)
+        bot.handle_update("message" => command_update.fetch("message").merge("text" => "/cancel"))
+        today = photo.merge(date: sent_time.to_date.iso8601)
+        allow(processor).to receive(:process).with(anything, sent_time.to_date).and_yield(today)
+
+        bot.handle_update(update)
+
+        expect(store.photo_on(upload_date)).to be_nil
+        expect(store.photo_on(sent_time.to_date)).to eq(today)
+      end
+
+      it "ignores a date selection from an unauthorized sender" do
+        command_update.fetch("message")["from"] = { "id" => 8 }
+        bot.handle_update(command_update)
+        today = photo.merge(date: sent_time.to_date.iso8601)
+        allow(processor).to receive(:process).with(anything, sent_time.to_date).and_yield(today)
+
+        bot.handle_update(update)
+
+        expect(store.photo_on(upload_date)).to be_nil
+        expect(store.photo_on(sent_time.to_date)).to eq(today)
+      end
     end
 
     it "waits for an in-progress upload before deciding to send a reminder" do

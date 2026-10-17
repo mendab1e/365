@@ -4,8 +4,12 @@ require "date"
 require "logger"
 require "tempfile"
 
+require_relative "bot_commands"
+
 module YearInPhotos
   class Bot
+    include BotCommands
+
     Services = Data.define(:generator, :processor, :telegram)
 
     POLL_RETRY_SECONDS = 5
@@ -74,23 +78,6 @@ module YearInPhotos
 
     private
 
-    def dispatch_message(message)
-      file_id = image_file_id(message)
-      return receive_photo(file_id, message_date(message)) if file_id
-      return reply("Only JPEG/JPG and HEIC image documents are accepted.") if message["document"]
-
-      case command_name(message)
-      when "/status" then send_status
-      when "/rebuild" then rebuild
-      else reply("Send today’s photo as an image or image file. Commands: /status, /rebuild")
-      end
-    end
-
-    def rebuild
-      @write_lock.synchronize { @generator.generate! }
-      reply("Site rebuilt.")
-    end
-
     def poll_loop
       offset = nil
       loop do
@@ -118,6 +105,7 @@ module YearInPhotos
 
     def receive_photo(file_id, date)
       @write_lock.synchronize do
+        date = @next_photo_date || date
         file_path = @telegram.file_path(file_id)
         Tempfile.create("telegram-photo") do |source|
           @telegram.download(file_path, source)
@@ -125,19 +113,9 @@ module YearInPhotos
             @store.save_photo_with_rollback(photo) { @generator.generate! }
           end
         end
+        @next_photo_date = nil
       end
       reply("Published #{date.strftime('%B %-d, %Y')} ✓")
-    end
-
-    def send_status
-      text = @write_lock.synchronize do
-        today = @clock.now.to_date
-        photos = @store.photos
-        published = photos.any? { |photo| photo.fetch(:date) == today.iso8601 }
-        status = published ? "published" : "still missing"
-        "Today’s photo is #{status}. #{photos.length} photo(s) published in total."
-      end
-      reply(text)
     end
 
     def authorized?(message)
@@ -156,11 +134,6 @@ module YearInPhotos
       return document["file_id"] if document && IMAGE_MIME_TYPES.include?(mime_type)
 
       message.fetch("photo", []).last&.fetch("file_id", nil)
-    end
-
-    def command_name(message)
-      token = message["text"].to_s.split.first
-      token&.split("@", 2)&.first
     end
 
     def message_date(message)

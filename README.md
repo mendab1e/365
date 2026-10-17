@@ -64,6 +64,13 @@ Available commands:
 
 - `/status` — report whether today's image exists and the total photo count
 - `/rebuild` — regenerate the static site from stored metadata and processed images
+- `/yesterday` — publish the next photo for yesterday, replacing any photo already posted for that date
+- `/cancel` — cancel the selected date and return to normal uploads for today
+
+Send `/yesterday`, wait for the bot to confirm the date, then send the replacement photo as usual.
+Yesterday is relative to when the command was sent in `PROJECT_TIMEZONE`; the confirmed date stays
+selected even if the upload arrives after midnight. The selection clears after one successful upload,
+`/cancel`, or a bot restart. Failed uploads can be retried without sending the command again.
 
 ## Generated files and image handling
 
